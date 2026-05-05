@@ -68,6 +68,44 @@ def cost_optimal_threshold(y_true, y_prob, cost: CostMatrix = CostMatrix()) -> f
     return float(sweep.loc[sweep["expected_cost"].idxmin(), "threshold"])
 
 
+def cost_sensitivity(
+    y_true,
+    y_prob,
+    ratios: tuple[float, ...] = (2.0, 3.0, 5.0, 7.0, 10.0),
+    fp_cost: float = 1.0,
+) -> pd.DataFrame:
+    """How does the optimal threshold (and the cost it achieves) move as
+    the FN:FP ratio changes? One row per ratio.
+
+    Used for the report's §13 sensitivity bullet — the 5:1 default is a
+    rough industry heuristic and we want to show the operating point
+    isn't fragile to it.
+    """
+    rows = []
+    y_true_arr = np.asarray(y_true).astype(int)
+    y_prob_arr = np.asarray(y_prob)
+    cost_at_default_05 = expected_cost(y_true_arr, y_prob_arr, 0.5,
+                                       CostMatrix(fn_cost=fp_cost, fp_cost=fp_cost))
+    for ratio in ratios:
+        cost = CostMatrix(fn_cost=ratio * fp_cost, fp_cost=fp_cost)
+        sweep = threshold_sweep(y_true_arr, y_prob_arr, cost)
+        idx = sweep["expected_cost"].idxmin()
+        thr = float(sweep.loc[idx, "threshold"])
+        cost_opt = float(sweep.loc[idx, "expected_cost"])
+        cost_05 = expected_cost(y_true_arr, y_prob_arr, 0.5, cost)
+        rows.append({
+            "fn_to_fp": float(ratio),
+            "optimal_threshold": thr,
+            "cost_at_optimal": cost_opt,
+            "cost_at_0.5": cost_05,
+            "reduction_vs_0.5": (cost_05 - cost_opt) / cost_05 if cost_05 > 0 else 0.0,
+            "precision": float(sweep.loc[idx, "precision"]),
+            "recall": float(sweep.loc[idx, "recall"]),
+            "f1": float(sweep.loc[idx, "f1"]),
+        })
+    return pd.DataFrame(rows)
+
+
 def evaluate_at_threshold(y_true, y_prob, threshold: float) -> dict:
     y_true = np.asarray(y_true).astype(int)
     y_prob = np.asarray(y_prob)

@@ -3,6 +3,7 @@ import numpy as np
 from src.evaluate import (
     CostMatrix,
     cost_optimal_threshold,
+    cost_sensitivity,
     evaluate_at_threshold,
     expected_cost,
     threshold_sweep,
@@ -51,6 +52,18 @@ def test_cost_optimal_threshold_below_half_when_fn_is_expensive():
     cost = CostMatrix(fn_cost=20.0, fp_cost=1.0)
     thr = cost_optimal_threshold(y_true, y_prob, cost)
     assert thr < 0.5
+
+
+def test_cost_sensitivity_threshold_decreases_with_fn_cost():
+    """Higher FN penalty => lower optimal threshold (catch more positives)."""
+    rng = np.random.default_rng(2)
+    n = 5_000
+    y_true = rng.binomial(1, 0.18, size=n)
+    y_prob = np.clip(0.18 + 0.35 * y_true + rng.normal(0, 0.3, n), 1e-4, 1 - 1e-4)
+    out = cost_sensitivity(y_true, y_prob, ratios=(1.0, 3.0, 5.0, 10.0))
+    thresholds = out["optimal_threshold"].to_numpy()
+    # monotonically non-increasing as FN penalty grows
+    assert (np.diff(thresholds) <= 1e-9).all(), thresholds
 
 
 def test_threshold_sweep_shape_and_columns():
