@@ -132,7 +132,7 @@ Slicing test errors by `purpose` reveals where the model misses defaults disprop
 ## 12. Future work
 
 - **Temporal validation** — train on origination cohort T, test on cohort T+1. Use Lending Club's `issue_d`.
-- **Drift monitoring** — PSI on input features and a delayed performance monitor on labels (loan outcomes resolve months after origination).
+- **Drift monitoring** — PSI implemented; see below. Delayed performance monitor on labels still pending.
 - **Calibration audit** — done; see below.
 - **Cost-matrix sensitivity** — done; see below.
 - **Segment-specific thresholds** — given the FNR concentration in `home_improvement` / `small_business`, a per-purpose threshold likely beats a single global one.
@@ -166,3 +166,15 @@ See [`notebooks/04_calibration.ipynb`](../notebooks/04_calibration.ipynb).
 **Honest finding**: the tuned LightGBM is already well-calibrated. Brier of 0.083 against a prevalence of ~0.18 (the all-base-rate Brier ceiling for this prevalence is `0.18 × 0.82 ≈ 0.148`), and ECE under 1%. Both Platt and isotonic recalibration land within noise of the raw model on the held-out eval half — neither is a meaningful improvement. We'd still ship the recalibration *machinery* for production because real Lending Club data, after a regime change, often shifts probabilities even when ranking quality holds.
 
 ![Reliability diagram](figures/reliability.png)
+
+## 13c. Drift monitoring (done)
+
+See [`notebooks/05_drift.ipynb`](../notebooks/05_drift.ipynb).
+
+Population Stability Index per feature with the conventional credit-risk thresholds (`< 0.10` stable, `0.10–0.25` moderate, `> 0.25` significant). The notebook validates three things:
+
+1. **No false alarms.** Baseline (train) vs current (held-out test) PSI is < 0.01 on every feature — the same DGP, no shift.
+2. **Detects expected drift.** Three simulated scenarios — a +4pp rate shock, a -25 FICO shift, and a one-third re-routing of loan purpose to `small_business` — each light up the expected features (and their dependents: rate-shock also moves `installment_estimate`).
+3. **Surfacable status labels.** `psi_report` returns one row per feature with a status, ready to feed a dashboard or pager rule.
+
+![PSI scenarios](figures/psi_scenarios.png)
