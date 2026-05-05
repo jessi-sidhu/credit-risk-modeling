@@ -133,7 +133,7 @@ Slicing test errors by `purpose` reveals where the model misses defaults disprop
 
 - **Temporal validation** — train on origination cohort T, test on cohort T+1. Use Lending Club's `issue_d`.
 - **Drift monitoring** — PSI on input features and a delayed performance monitor on labels (loan outcomes resolve months after origination).
-- **Calibration audit** — reliability diagrams. A model with high PR-AUC isn't automatically well-calibrated; if pricing depends on the predicted probability, miscalibration costs real money.
+- **Calibration audit** — done; see below.
 - **Cost-matrix sensitivity** — done; see below.
 - **Segment-specific thresholds** — given the FNR concentration in `home_improvement` / `small_business`, a per-purpose threshold likely beats a single global one.
 
@@ -152,3 +152,17 @@ The 5:1 ratio is a heuristic. Sweeping FN:FP from 2:1 to 10:1 on the held-out te
 The qualitative behavior is what we'd want to defend in an interview: as the FN penalty grows, threshold drops monotonically, recall grows, precision falls, and the gain from threshold tuning over the naive 0.5 grows. The operating point is not fragile to the exact ratio within a reasonable range.
 
 ![Cost sensitivity](figures/cost_sensitivity.png)
+
+## 13b. Calibration audit (done)
+
+See [`notebooks/04_calibration.ipynb`](../notebooks/04_calibration.ipynb).
+
+| Method | Brier | ECE |
+|---|---:|---:|
+| Raw LightGBM | 0.0832 | 0.0095 |
+| Platt scaling | 0.0834 | 0.0124 |
+| Isotonic regression | 0.0831 | 0.0107 |
+
+**Honest finding**: the tuned LightGBM is already well-calibrated. Brier of 0.083 against a prevalence of ~0.18 (the all-base-rate Brier ceiling for this prevalence is `0.18 × 0.82 ≈ 0.148`), and ECE under 1%. Both Platt and isotonic recalibration land within noise of the raw model on the held-out eval half — neither is a meaningful improvement. We'd still ship the recalibration *machinery* for production because real Lending Club data, after a regime change, often shifts probabilities even when ranking quality holds.
+
+![Reliability diagram](figures/reliability.png)
