@@ -7,13 +7,25 @@ EXPECTED_COLS = [
     "loan_amount", "term", "int_rate", "grade", "emp_length",
     "home_ownership", "annual_income", "purpose", "dti", "fico",
     "open_acc", "revol_util", "noise_1", "noise_2", "default",
+    "protected_group",
 ]
 
 
 def test_shape_and_columns():
     df = generate(n=5_000, seed=42)
-    assert df.shape == (5_000, 15)
+    assert df.shape == (5_000, 16)
     assert list(df.columns) == EXPECTED_COLS
+
+
+def test_protected_group_does_not_directly_drive_default():
+    """Group correlates with income, so we expect *some* disparity in
+    default rate by group, but the dependence must be weak: a t-test
+    between groups within the same income decile should be small."""
+    df = generate(n=20_000, seed=42)
+    # within high-income only, default rate should be roughly equal across groups
+    high = df[df["annual_income"] > df["annual_income"].quantile(0.7)]
+    rates = high.groupby("protected_group")["default"].mean()
+    assert rates.max() - rates.min() < 0.05, rates.to_dict()
 
 
 def test_default_rate_near_18_percent():

@@ -98,6 +98,21 @@ def generate(n: int = 50_000, seed: int = 42) -> pd.DataFrame:
     p = 1.0 / (1.0 + np.exp(-(z + intercept)))
     default = (rng.random(size=n) < p).astype(int)
 
+    # protected_group is generated AFTER everything else so adding this
+    # field doesn't shift the rng stream for any earlier column. Given
+    # the same seed, every other column is bit-identical to a build
+    # without this attribute.  The group is correlated with income (a
+    # realistic proxy effect) but does NOT influence `default` directly,
+    # so any disparity surfaced in 06_fairness.ipynb comes from the
+    # model relying on income/FICO — not from labels being unfair.
+    log_inc = np.log(annual_income)
+    z_inc = (log_inc - log_inc.mean()) / log_inc.std()
+    group_score = z_inc + rng.normal(0, 0.6, size=n)
+    protected_group = np.where(
+        group_score > 0.5, "A",
+        np.where(group_score > -0.5, "B", "C"),
+    )
+
     return pd.DataFrame({
         "loan_amount": loan_amount,
         "term": term,
@@ -114,4 +129,5 @@ def generate(n: int = 50_000, seed: int = 42) -> pd.DataFrame:
         "noise_1": noise_1,
         "noise_2": noise_2,
         "default": default,
+        "protected_group": protected_group,
     })
