@@ -125,7 +125,7 @@ Slicing test errors by `purpose` reveals where the model misses defaults disprop
 
 - **Synthetic data.** Real Lending Club has messier missingness, label-leakage risk from `loan_status` derivative columns, and time effects (interest rates and macro conditions shift). Our DGP is additive in the true features; real data is not.
 - **No temporal split.** Real credit modeling uses out-of-time validation because borrower behavior shifts. We did random stratified split.
-- **No fairness audit.** In real deployment, we'd test for disparate impact across protected classes (race, gender, age). Some are forbidden as features under US ECOA, but the model can still discriminate via proxies (zip code, income).
+- **Fairness audit included.** A `protected_group` attribute (correlated with income, never given to the model) lets us measure approval-rate, FNR, and FPR parity. See [§13d](#13d-fairness-audit-done) below for results. Note that real-world protected attributes (race, age) are forbidden as features under US ECOA but can leak via proxies — the audit framework here ports directly.
 - **Single point-in-time prediction.** Doesn't model survival/hazard — *when* during the loan does default happen?
 - **Cost matrix is a rough heuristic.** 5:1 is a defensible starting point, not a measured number from a specific lender's P&L.
 
@@ -178,3 +178,41 @@ Population Stability Index per feature with the conventional credit-risk thresho
 3. **Surfacable status labels.** `psi_report` returns one row per feature with a status, ready to feed a dashboard or pager rule.
 
 ![PSI scenarios](figures/psi_scenarios.png)
+
+## 13d. Fairness audit (done)
+
+See [`notebooks/06_fairness.ipynb`](../notebooks/06_fairness.ipynb).
+
+The synthetic data has a `protected_group ∈ {A, B, C}` attribute correlated with income (added at the end of `synth.generate` so all other columns are bit-identical and the saved model still applies). The model never sees `protected_group` — but it does use `annual_income` and `fico`, the canonical proxy variables.
+
+At the cost-optimal threshold of 0.14:
+
+| Group | n | True default rate | Approval rate | FNR | FPR | PPV |
+|---|---:|---:|---:|---:|---:|---:|
+| A (highest income) | 3,300 | 16.2% | 68.8% | 12.1% | 20.2% | 45.8% |
+| B | 3,353 | 18.7% | 66.8% | 10.7% | 20.3% | 50.3% |
+| C (lowest income) | 3,347 | 19.0% | 63.5% | 9.1% | 23.7% | 47.3% |
+
+Parity ratios vs Group A:
+
+| Group | Approval | TPR | FPR | FNR | PPV |
+|---|---:|---:|---:|---:|---:|
+| A | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| B | 0.970 | 1.017 | 1.007 | 0.880 | 1.099 |
+| C | 0.923 | 1.034 | 1.175 | 0.752 | 1.034 |
+
+**Four-fifths rule**: passes at **0.92** (Group C approval rate is 92% of Group A's, well above the 0.80 EEOC threshold). Disparate impact is real but mild.
+
+![Fairness metrics](figures/fairness_metrics.png)
+
+**The honest takeaway** is the inherent trade-off: groups have different *true* default rates (16.2% vs 19.0%), so the three classical fairness criteria — demographic parity, equal opportunity (TPR parity), predictive parity (PPV parity) — provably cannot all hold simultaneously. Here the model gets approximate equal opportunity (TPR parity within 3.4%) and approximate predictive parity (PPV within 10%) at the cost of unequal approval rates and unequal FPRs. Whether that's the right trade-off is a policy decision, not a modeling one. We'd surface this audit at every deployment review.
+
+Per-group cost-optimal thresholds, for comparison only — **not** something we'd ship, because making the threshold a function of group violates ECOA's prohibition on using a protected attribute in the decision rule:
+
+| Group | Cost-optimal threshold |
+|---|---:|
+| A | 0.16 |
+| B | 0.13 |
+| C | 0.13 |
+
+The thresholds are close enough that the global 0.14 is a reasonable compromise on this dataset.
