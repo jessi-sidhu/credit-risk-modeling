@@ -134,5 +134,21 @@ Slicing test errors by `purpose` reveals where the model misses defaults disprop
 - **Temporal validation** — train on origination cohort T, test on cohort T+1. Use Lending Club's `issue_d`.
 - **Drift monitoring** — PSI on input features and a delayed performance monitor on labels (loan outcomes resolve months after origination).
 - **Calibration audit** — reliability diagrams. A model with high PR-AUC isn't automatically well-calibrated; if pricing depends on the predicted probability, miscalibration costs real money.
-- **Cost-matrix sensitivity** — sweep FN:FP from 3:1 to 10:1 and report how the optimal threshold and operational metrics move. The hook is already there: `CostMatrix(fn_cost, fp_cost)`.
+- **Cost-matrix sensitivity** — done; see below.
 - **Segment-specific thresholds** — given the FNR concentration in `home_improvement` / `small_business`, a per-purpose threshold likely beats a single global one.
+
+## 13a. Cost-matrix sensitivity (done)
+
+The 5:1 ratio is a heuristic. Sweeping FN:FP from 2:1 to 10:1 on the held-out test set:
+
+| FN:FP | Optimal threshold | Cost @ opt | Cost @ 0.5 | Reduction | Precision | Recall | F1 |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2 | 0.29 | 1,753 | 1,864 | 6.0% | 0.607 | 0.759 | 0.674 |
+| 3 | 0.22 | 2,167 | 2,606 | 16.8% | 0.551 | 0.822 | 0.660 |
+| 5 | 0.14 | 2,705 | 4,090 | **33.9%** | 0.478 | 0.894 | 0.623 |
+| 7 | 0.12 | 3,054 | 5,574 | 45.2% | 0.456 | 0.913 | 0.608 |
+| 10 | 0.07 | 3,490 | 7,800 | 55.3% | 0.390 | 0.956 | 0.554 |
+
+The qualitative behavior is what we'd want to defend in an interview: as the FN penalty grows, threshold drops monotonically, recall grows, precision falls, and the gain from threshold tuning over the naive 0.5 grows. The operating point is not fragile to the exact ratio within a reasonable range.
+
+![Cost sensitivity](figures/cost_sensitivity.png)
