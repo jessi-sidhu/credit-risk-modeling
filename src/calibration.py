@@ -100,3 +100,26 @@ def calibration_metrics(y_true, y_prob) -> dict:
         "brier": float(brier_score_loss(y_true, y_prob)),
         "ece": expected_calibration_error(y_true, y_prob),
     }
+
+
+def cv_calibrated_probs(pipe, X, y, cv: int = 5, random_state: int = 42) -> np.ndarray:
+    """Cross-validated train probabilities — methodologically cleaner
+    inputs to a calibrator than the held-out-half-of-test approach.
+
+    Each row of `X` gets a probability from a fold in which it was a
+    held-out point, so the resulting probs are unbiased estimates of
+    what the model would say on unseen data. The caller fits Platt or
+    isotonic on `(cv_probs, y)` and applies to test predictions.
+    """
+    from sklearn.base import clone
+    from sklearn.model_selection import StratifiedKFold
+
+    X = pd.DataFrame(X) if not isinstance(X, pd.DataFrame) else X
+    y_arr = np.asarray(y).astype(int)
+    out = np.empty(len(y_arr), dtype=float)
+    skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=random_state)
+    for tr_idx, va_idx in skf.split(X, y_arr):
+        m = clone(pipe)
+        m.fit(X.iloc[tr_idx], y_arr[tr_idx])
+        out[va_idx] = m.predict_proba(X.iloc[va_idx])[:, 1]
+    return out

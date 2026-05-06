@@ -63,6 +63,45 @@ def test_reliability_table_shape():
     assert tbl["mean_predicted"].iloc[0] < tbl["mean_predicted"].iloc[-1]
 
 
+def test_cv_calibrated_probs_shape_and_bounds():
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import Pipeline
+    from src.calibration import cv_calibrated_probs
+
+    rng = np.random.default_rng(7)
+    n = 600
+    X = rng.normal(size=(n, 3))
+    y = (X[:, 0] + 0.5 * rng.normal(size=n) > 0).astype(int)
+    pipe = Pipeline([("clf", LogisticRegression(max_iter=200))])
+
+    probs = cv_calibrated_probs(pipe, X, y, cv=5, random_state=0)
+    assert probs.shape == (n,)
+    assert (probs >= 0).all() and (probs <= 1).all()
+
+
+def test_cv_calibrated_probs_separate_each_row():
+    """Each row's probability comes from a model that did NOT see it
+    in training — so on a perfectly separable dataset, the in-sample
+    train predict_proba would be near {0,1}, but cv_calibrated_probs
+    has higher variance because each fold trained on less data."""
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import Pipeline
+    from src.calibration import cv_calibrated_probs
+
+    rng = np.random.default_rng(8)
+    n = 400
+    X = rng.normal(size=(n, 1))
+    y = (X[:, 0] > 0).astype(int)
+    pipe = Pipeline([("clf", LogisticRegression(max_iter=200))])
+    pipe.fit(X, y)
+
+    p_in = pipe.predict_proba(X)[:, 1]
+    p_cv = cv_calibrated_probs(pipe, X, y, cv=5, random_state=0)
+    assert p_in.shape == p_cv.shape
+    # not bit-equal: one is in-sample, the other is out-of-fold
+    assert not np.allclose(p_in, p_cv)
+
+
 def test_ece_zero_for_well_calibrated_constant():
     """If every prediction equals the empirical mean, ECE should be 0."""
     rng = np.random.default_rng(3)
