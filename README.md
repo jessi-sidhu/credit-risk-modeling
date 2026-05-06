@@ -48,6 +48,36 @@ tests/            sanity, leakage guard, threshold selection, calibration,
                   drift, fairness — 33 tests total
 ```
 
+## Using real Lending Club data
+
+The project is synthetic by default. To run the same pipeline on a real Lending Club CSV:
+
+1. Download the accepted-loans CSV from Lending Club (Kaggle mirror works) and drop it in `data/raw/`. Any filename ending in `.csv` is fine; the loader picks the first match.
+2. In any notebook or script: `df = load_data(source="lendingclub")`. Returns the same canonical schema (17 columns) as `load_data(source="synthetic")`.
+
+`src/data.py::_load_lendingclub` handles the LC quirks:
+
+| LC column | Internal | Notes |
+|---|---|---|
+| `loan_amnt` | `loan_amount` | direct |
+| `term` | `term` | parsed: `" 36 months"` → `36` |
+| `int_rate` | `int_rate` | parsed: `"12.45%"` → `12.45` |
+| `grade` | `grade` | direct |
+| `emp_length` | `emp_length` | `"10+ years"` → `10`, `"< 1 year"` → `0`, `"n/a"`/NaN → `0` |
+| `home_ownership` | `home_ownership` | direct |
+| `annual_inc` | `annual_income` | direct |
+| `purpose` | `purpose` | direct |
+| `dti` | `dti` | direct |
+| `fico_range_low`, `fico_range_high` | `fico` | mean |
+| `open_acc` | `open_acc` | direct |
+| `revol_util` | `revol_util` | parsed: `"45.2%"` → `45.2`, `NaN` preserved |
+| `issue_d` | `issue_d` | parsed: `"Dec-2014"` → `2014-12-01` |
+| `loan_status` | `default` | `Charged Off` / `Default` / `Late (31-120 days)` → `1`; rest → `0` |
+| (none) | `noise_1`, `noise_2` | zero-filled |
+| (none) | `protected_group` | `"unknown"` |
+
+The `tests/test_lendingclub_swap.py` suite validates every step on a 6-row fixture, so you can verify the loader works without downloading the real ~1 GB dataset.
+
 ## What this project demonstrates
 
 - **Defensible metric choice.** PR-AUC over accuracy under 18% prevalence; cost-aware threshold over arbitrary 0.5.
