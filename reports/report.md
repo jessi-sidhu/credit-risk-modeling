@@ -165,6 +165,18 @@ See [`notebooks/04_calibration.ipynb`](../notebooks/04_calibration.ipynb).
 
 **Honest finding**: the tuned LightGBM is already well-calibrated. Brier of 0.083 against a prevalence of ~0.18 (the all-base-rate Brier ceiling for this prevalence is `0.18 × 0.82 ≈ 0.148`), and ECE under 1%. Both Platt and isotonic recalibration land within noise of the raw model on the held-out eval half — neither is a meaningful improvement. We'd still ship the recalibration *machinery* for production because real Lending Club data, after a regime change, often shifts probabilities even when ranking quality holds.
 
+**Cross-validated calibration.** `src/calibration.py::cv_calibrated_probs` is the methodologically cleaner way to fit a calibrator: it returns one probability per train row from a fold where that row was held out, so the calibration data is unimpeachably out-of-sample. Apples-to-apples on the same eval half:
+
+| Method | Brier | ECE |
+|---|---:|---:|
+| Raw | 0.0832 | 0.0095 |
+| Platt (test-half) | 0.0834 | 0.0124 |
+| Isotonic (test-half) | 0.0831 | 0.0107 |
+| Platt (CV-on-train) | 0.0833 | 0.0126 |
+| Isotonic (CV-on-train) | 0.0847 | 0.0206 |
+
+All five are within noise of each other on Brier, confirming the model's intrinsic calibration. The CV path is the one we'd use in production where the held-out-half-of-test trick wouldn't be available.
+
 ![Reliability diagram](figures/reliability.png)
 
 ## 13c. Drift monitoring (done)
