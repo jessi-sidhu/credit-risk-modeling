@@ -21,6 +21,31 @@ RAW_DIR = _PROJECT_ROOT / "data" / "raw"
 DEFAULT_STATUSES = {"Charged Off", "Default", "Late (31-120 days)"}
 
 
+def temporal_split(
+    df: pd.DataFrame,
+    train_until: str = "2017-06",
+    test_from: str = "2018-01",
+    date_col: str = "issue_d",
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Split by `issue_d` into (train, validation, test) frames.
+
+    `train_until` is inclusive; `test_from` is inclusive. The slice
+    between them is the validation set (useful for tuning that needs an
+    in-time hold-out without burning the test set).
+    """
+    if date_col not in df.columns:
+        raise ValueError(f"{date_col!r} column not found in DataFrame")
+
+    dates = pd.to_datetime(df[date_col])
+    end_train = pd.Period(train_until, freq="M").to_timestamp("M")
+    start_test = pd.Period(test_from, freq="M").to_timestamp()
+
+    train = df[dates <= end_train]
+    test = df[dates >= start_test]
+    val = df[(dates > end_train) & (dates < start_test)]
+    return train.reset_index(drop=True), val.reset_index(drop=True), test.reset_index(drop=True)
+
+
 def load_data(
     source: str = "synthetic",
     n: int = 50_000,
@@ -29,7 +54,7 @@ def load_data(
 ) -> pd.DataFrame:
     if source == "synthetic":
         if SYNTH_PATH.exists() and not regenerate:
-            return pd.read_csv(SYNTH_PATH)
+            return pd.read_csv(SYNTH_PATH, parse_dates=["issue_d"])
         df = generate(n=n, seed=seed)
         SYNTH_PATH.parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(SYNTH_PATH, index=False)
