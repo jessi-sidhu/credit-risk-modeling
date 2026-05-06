@@ -9,22 +9,14 @@ The pipeline is built on a synthetic Lending-Club-style dataset for reproducibil
 ## Quickstart
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-pytest                                     # 16 tests — sanity, leakage guard, threshold selection
-python -m src.train --quick                # 5k rows, 10 tuning iters — under 90s
-python -m src.train                        # full run — ~7 min on a laptop
+make install     # creates .venv, installs pinned deps
+make test        # 33 tests
+make smoke       # 5k rows + 10 tuning iters, ~90s — sanity check
+make train       # full run, ~7 min on a laptop, saves model + predictions
+make notebooks   # execute all six notebooks in order, in-place
 ```
 
-To regenerate the notebooks after training:
-
-```bash
-jupyter nbconvert --to notebook --execute notebooks/01_eda.ipynb --inplace
-jupyter nbconvert --to notebook --execute notebooks/02_modeling.ipynb --inplace
-jupyter nbconvert --to notebook --execute notebooks/03_interpretation.ipynb --inplace
-```
-
-The modeling notebook caches artifacts to `reports/artifacts/`; re-runs after the first full train take seconds.
+`make all` chains install → test → train → notebooks. `make verify` wipes generated state and reproduces from scratch. `make clean` removes only generated state. `make help` lists targets.
 
 ## Layout
 
