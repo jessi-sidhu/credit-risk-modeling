@@ -124,14 +124,14 @@ Slicing test errors by `purpose` reveals where the model misses defaults disprop
 ## 11. Limitations (honest)
 
 - **Synthetic data.** Real Lending Club has messier missingness, label-leakage risk from `loan_status` derivative columns, and time effects (interest rates and macro conditions shift). Our DGP is additive in the true features; real data is not.
-- **No temporal split.** Real credit modeling uses out-of-time validation because borrower behavior shifts. We did random stratified split.
+- **Temporal validation included** — see [§13e](#13e-temporal-validation-done) below.
 - **Fairness audit included.** A `protected_group` attribute (correlated with income, never given to the model) lets us measure approval-rate, FNR, and FPR parity. See [§13d](#13d-fairness-audit-done) below for results. Note that real-world protected attributes (race, age) are forbidden as features under US ECOA but can leak via proxies — the audit framework here ports directly.
 - **Single point-in-time prediction.** Doesn't model survival/hazard — *when* during the loan does default happen?
 - **Cost matrix is a rough heuristic.** 5:1 is a defensible starting point, not a measured number from a specific lender's P&L.
 
 ## 12. Future work
 
-- **Temporal validation** — train on origination cohort T, test on cohort T+1. Use Lending Club's `issue_d`.
+- **Temporal validation** — done; see below.
 - **Drift monitoring** — PSI implemented; see below. Delayed performance monitor on labels still pending.
 - **Calibration audit** — done; see below.
 - **Cost-matrix sensitivity** — done; see below.
@@ -216,3 +216,29 @@ Per-group cost-optimal thresholds, for comparison only — **not** something we'
 | C | 0.13 |
 
 The thresholds are close enough that the global 0.14 is a reasonable compromise on this dataset.
+
+## 13e. Temporal validation (done)
+
+See [`notebooks/07_temporal.ipynb`](../notebooks/07_temporal.ipynb).
+
+The synthetic generator gained an `issue_d` column spanning 60 cohort months (2014-01 → 2018-12) and an opt-in `temporal_trend` flag that adds two effects to the default-rate logit:
+
+1. A macro shift: `+ 0.4 * (cohort_year - 2016) / 2`. Default prevalence drifts year-over-year while the marginal rate stays at 18% via the existing intercept calibrator.
+2. A 2018 regime change: half the historical `int_rate → default` signal is removed for 2018 cohorts, simulating a market shift where rates no longer risk-stratify as cleanly.
+
+Same model architecture and hyperparameters fitted under two methodologies — random 80/20 split (the methodology in §6–8 of this report) vs temporal split (train ≤ 2017-06, test ≥ 2018-01):
+
+| Model | Random PR-AUC | Temporal PR-AUC | Δ | Random ROC-AUC | Temporal ROC-AUC | Δ |
+|---|---:|---:|---:|---:|---:|---:|
+| Logistic regression | 0.726 | 0.663 | **−0.063** | 0.914 | 0.888 | −0.026 |
+| Random forest | 0.703 | 0.634 | **−0.069** | 0.904 | 0.877 | −0.027 |
+| LightGBM (tuned) | 0.723 | 0.654 | **−0.069** | 0.913 | 0.885 | −0.028 |
+
+**Random split overstates production performance by 6–7 PR-AUC points and 2–3 ROC-AUC points.** The headline number that goes to the bank is the OOT one — anything else assumes a stationary world that doesn't exist.
+
+![Temporal degradation](figures/temporal_degradation.png)
+![Per-cohort PR-AUC in 2018](figures/temporal_per_cohort.png)
+
+**What this still doesn't capture.** Feature-distribution drift between origination and outcome resolution. Real loans default 6–18 months after origination; by the time you have labels, the input distribution has already moved on. The PSI monitor (§13c) catches input-side drift; a delayed-outcome monitor catches output-side performance erosion. Both are needed in production.
+
+**Reproduce** with `make train-temporal` (deterministic via `RANDOM_STATE = 42`).
