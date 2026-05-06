@@ -7,14 +7,38 @@ EXPECTED_COLS = [
     "loan_amount", "term", "int_rate", "grade", "emp_length",
     "home_ownership", "annual_income", "purpose", "dti", "fico",
     "open_acc", "revol_util", "noise_1", "noise_2", "default",
-    "protected_group",
+    "protected_group", "issue_d",
 ]
 
 
 def test_shape_and_columns():
     df = generate(n=5_000, seed=42)
-    assert df.shape == (5_000, 16)
+    assert df.shape == (5_000, 17)
     assert list(df.columns) == EXPECTED_COLS
+
+
+def test_issue_d_spans_2014_to_2018():
+    df = generate(n=5_000, seed=42)
+    assert df["issue_d"].dt.year.min() == 2014
+    assert df["issue_d"].dt.year.max() == 2018
+
+
+def test_temporal_trend_default_rate_grows_with_cohort_year():
+    df = generate(n=30_000, seed=42, temporal_trend=True)
+    by_year = df.groupby(df["issue_d"].dt.year)["default"].mean()
+    # 2014 cohort should default less than 2018 cohort under +trend
+    assert by_year.loc[2014] < by_year.loc[2018], by_year.to_dict()
+
+
+def test_temporal_flag_off_preserves_existing_default_label():
+    """temporal_trend=False must produce bit-identical default labels
+    to the schema-pre-temporal era so the saved tuned LightGBM still
+    applies."""
+    a = generate(n=2_000, seed=42, temporal_trend=False)
+    b = generate(n=2_000, seed=42, temporal_trend=False)
+    pd.testing.assert_series_equal(a["default"], b["default"])
+    pd.testing.assert_series_equal(a["fico"], b["fico"])
+    pd.testing.assert_series_equal(a["protected_group"], b["protected_group"])
 
 
 def test_protected_group_does_not_directly_drive_default():

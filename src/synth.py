@@ -51,8 +51,33 @@ def _grade_to_int_rate(grade: np.ndarray, rng: np.random.Generator) -> np.ndarra
     return np.clip(base_arr + rng.normal(0, 1.0, size=len(grade)), 5.0, 30.0)
 
 
-def generate(n: int = 50_000, seed: int = 42) -> pd.DataFrame:
+def _sample_issue_d(n: int, seed: int) -> pd.DatetimeIndex:
+    """Sample origination dates uniformly across 60 cohort months
+    (2014-01 through 2018-12). Uses an independent rng so the main
+    feature stream stays bit-identical with or without temporal trend.
+    """
+    iss_rng = np.random.default_rng(seed + 1)
+    cohort_idx = iss_rng.integers(0, 60, size=n)
+    base = pd.Period("2014-01", freq="M")
+    return pd.DatetimeIndex(
+        [(base + int(i)).to_timestamp() for i in cohort_idx]
+    )
+
+
+def generate(n: int = 50_000, seed: int = 42, temporal_trend: bool = False) -> pd.DataFrame:
+    """Generate a synthetic loan dataset.
+
+    `issue_d` is always emitted (drawn from an independent rng stream
+    so older columns remain bit-identical for the same seed).
+
+    `temporal_trend=True` adds a mild cohort-year drift to the default-
+    rate logit (`+0.4 * (year - 2016) / 2`), creating the kind of
+    cohort-vs-cohort regime change that motivates out-of-time
+    validation. Marginal default rate is re-calibrated to ~18%
+    regardless.
+    """
     rng = np.random.default_rng(seed)
+    issue_d = _sample_issue_d(n, seed)
 
     fico = np.clip(rng.normal(700, 35, size=n), 600, 850).round().astype(int)
     grade = _fico_to_grade(fico)
@@ -92,6 +117,9 @@ def generate(n: int = 50_000, seed: int = 42) -> pd.DataFrame:
         + loan_to_income * 1.2
         + (term == 60).astype(float) * 0.15
     )
+    if temporal_trend:
+        cohort_year = issue_d.year.to_numpy()
+        z = z + 0.4 * (cohort_year - 2016) / 2.0
     # calibrate intercept so the marginal default rate ≈ target_rate
     target_rate = 0.18
     intercept = _calibrate_intercept(z, target_rate)
@@ -130,4 +158,5 @@ def generate(n: int = 50_000, seed: int = 42) -> pd.DataFrame:
         "noise_2": noise_2,
         "default": default,
         "protected_group": protected_group,
+        "issue_d": issue_d,
     })
