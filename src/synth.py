@@ -119,7 +119,15 @@ def generate(n: int = 50_000, seed: int = 42, temporal_trend: bool = False) -> p
     )
     if temporal_trend:
         cohort_year = issue_d.year.to_numpy()
+        # 1) Macro effect on overall default rate (prevalence shift).
         z = z + 0.4 * (cohort_year - 2016) / 2.0
+        # 2) 2018 regime change — half of the historical int_rate signal
+        #    breaks down, simulating a market shift where rates no longer
+        #    risk-stratify as cleanly. This is what makes a 2014-2017
+        #    trained model genuinely degrade out-of-time, vs only seeing
+        #    a base-rate change.
+        in_2018 = (cohort_year >= 2018).astype(float)
+        z = z - in_2018 * ((int_rate - 13) / 5) * 0.5
     # calibrate intercept so the marginal default rate ≈ target_rate
     target_rate = 0.18
     intercept = _calibrate_intercept(z, target_rate)

@@ -9,6 +9,7 @@ help:
 	@echo "  test        run pytest"
 	@echo "  smoke       quick training run (5k rows, 10 tuning iters, < 90s)"
 	@echo "  train       full training run with 30 tuning iters (~7 min)"
+	@echo "  train-temporal  random vs out-of-time split comparison (~30s)"
 	@echo "  notebooks   execute all notebooks in order, in-place"
 	@echo "  all         install -> test -> train -> notebooks"
 	@echo "  verify      wipe generated artifacts, then run all (full reproduce)"
@@ -28,6 +29,9 @@ smoke:
 
 train:
 	$(PY) -m src.train --save
+
+train-temporal:
+	$(PY) -m src.train --temporal --save
 
 notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/01_eda.ipynb            --inplace --ExecutePreprocessor.timeout=600
