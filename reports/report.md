@@ -132,7 +132,7 @@ Slicing test errors by `purpose` reveals where the model misses defaults disprop
 ## 12. Future work
 
 - **Temporal validation** — done; see below.
-- **Drift monitoring** — PSI implemented; see below. Delayed performance monitor on labels still pending.
+- **Drift monitoring** — PSI on inputs and rolling-window performance with a label-resolution lag both implemented; see [§13c](#13c-drift-monitoring-done).
 - **Calibration audit** — done; see below.
 - **Cost-matrix sensitivity** — done; see below.
 - **Segment-specific thresholds** — given the FNR concentration in `home_improvement` / `small_business`, a per-purpose threshold likely beats a single global one.
@@ -178,6 +178,10 @@ Population Stability Index per feature with the conventional credit-risk thresho
 3. **Surfacable status labels.** `psi_report` returns one row per feature with a status, ready to feed a dashboard or pager rule.
 
 ![PSI scenarios](figures/psi_scenarios.png)
+
+**Label-delay performance monitor.** PSI gives early warning on inputs (within hours of seeing new applications). The complementary check is *output*-side drift: PR-AUC and Brier on freshly-resolved labels. `src/monitor.py::rolling_performance` walks rolling cohort windows with a configurable `lag_months` between origination and outcome resolution. Combined, the two monitors cover both failure modes — input shifts you can detect today, performance erosion you can only confirm months later.
+
+![Label-delay monitor](figures/monitor_label_delay.png)
 
 ## 13d. Fairness audit (done)
 
