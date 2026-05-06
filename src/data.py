@@ -2,9 +2,28 @@
 
 `load_data` is the single swap point between synthetic and real Lending
 Club data. Both sources return a DataFrame with the same columns:
+
     loan_amount, term, int_rate, grade, emp_length, home_ownership,
     annual_income, purpose, dti, fico, open_acc, revol_util,
-    noise_1, noise_2, default
+    noise_1, noise_2, default, protected_group, issue_d
+
+Real LC mapping (see `_load_lendingclub`):
+    loan_amnt        -> loan_amount
+    term             -> term (parsed: " 36 months" -> 36)
+    int_rate         -> int_rate (parsed: "12.45%" -> 12.45)
+    grade            -> grade
+    emp_length       -> emp_length (parsed: "10+ years" -> 10, "< 1 year" -> 0)
+    home_ownership   -> home_ownership
+    annual_inc       -> annual_income
+    purpose          -> purpose
+    dti              -> dti
+    fico_range_{lo,hi} mean -> fico
+    open_acc         -> open_acc
+    revol_util       -> revol_util (parsed: "45.2%" -> 45.2)
+    issue_d          -> issue_d (parsed: "Dec-2014" -> 2014-12-01)
+    loan_status      -> default (Charged Off / Default / Late > 30 -> 1)
+    (none)           -> noise_1, noise_2 (zero-filled; for parity with synth)
+    (none)           -> protected_group ("unknown"; LC has no such field)
 """
 from __future__ import annotations
 
@@ -64,11 +83,22 @@ def load_data(
     raise ValueError(f"Unknown source: {source!r}")
 
 
-def _load_lendingclub() -> pd.DataFrame:
-    candidates = sorted(RAW_DIR.glob("*.csv"))
+def _parse_lc_emp_length(series: pd.Series) -> pd.Series:
+    """LC `emp_length` is messy: "10+ years", "< 1 year", "n/a", "1 year",
+    "2 years", NaN. Map to clipped int years (0..10)."""
+    s = series.fillna("0").astype(str).str.strip()
+    s = s.where(~s.isin(["n/a", "N/A", "na"]), "0")
+    s = s.where(~s.str.startswith("<"), "0")
+    s = s.where(~s.str.startswith("10"), "10")
+    digits = s.str.extract(r"(\d+)")[0].fillna("0").astype(int)
+    return digits.clip(0, 10)
+
+
+def _load_lendingclub(raw_dir: Path = RAW_DIR) -> pd.DataFrame:
+    candidates = sorted(raw_dir.glob("*.csv"))
     if not candidates:
         raise FileNotFoundError(
-            f"No CSV in {RAW_DIR}. Drop a Lending Club accepted-loans CSV there."
+            f"No CSV in {raw_dir}. Drop a Lending Club accepted-loans CSV there."
         )
     raw = pd.read_csv(candidates[0], low_memory=False)
     fico = (
@@ -80,21 +110,21 @@ def _load_lendingclub() -> pd.DataFrame:
         "term": raw["term"].astype(str).str.extract(r"(\d+)")[0].astype(int),
         "int_rate": raw["int_rate"].astype(str).str.rstrip("%").astype(float),
         "grade": raw["grade"],
-        "emp_length": (
-            raw["emp_length"].fillna("0").astype(str).str.extract(r"(\d+)")[0]
-            .fillna("0").astype(int)
-        ),
+        "emp_length": _parse_lc_emp_length(raw["emp_length"]),
         "home_ownership": raw["home_ownership"],
         "annual_income": raw["annual_inc"],
         "purpose": raw["purpose"],
         "dti": raw["dti"],
         "fico": fico,
         "open_acc": raw["open_acc"],
-        "revol_util": (
-            raw["revol_util"].astype(str).str.rstrip("%").astype(float)
+        "revol_util": pd.to_numeric(
+            raw["revol_util"].astype(str).str.rstrip("%"),
+            errors="coerce",
         ),
         "noise_1": 0.0,
         "noise_2": 0.0,
         "default": raw["loan_status"].isin(DEFAULT_STATUSES).astype(int),
+        "protected_group": "unknown",
+        "issue_d": pd.to_datetime(raw["issue_d"], format="%b-%Y", errors="coerce"),
     })
-    return df.dropna(subset=["fico", "dti", "annual_income", "loan_amount"])
+    return df.dropna(subset=["fico", "dti", "annual_income", "loan_amount", "issue_d"])
