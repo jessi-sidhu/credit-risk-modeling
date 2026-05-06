@@ -38,14 +38,16 @@ notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/02_modeling.ipynb       --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/03_interpretation.ipynb --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/04_calibration.ipynb    --inplace --ExecutePreprocessor.timeout=600
+	$(JUPYTER) nbconvert --to notebook --execute notebooks/07_temporal.ipynb       --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/05_drift.ipynb          --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/06_fairness.ipynb       --inplace --ExecutePreprocessor.timeout=600
 
-all: install test train notebooks
+all: install test train train-temporal notebooks
 
 clean:
-	rm -rf reports/figures/*.png reports/artifacts/*.joblib reports/artifacts/*.csv \
-	       reports/artifacts/*.npy reports/artifacts/*.json data/synthetic/*.csv
+	rm -rf reports/artifacts/*.joblib reports/artifacts/*.csv \
+	       reports/artifacts/*.npy reports/artifacts/*.json \
+	       reports/artifacts/temporal/* data/synthetic/*.csv
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .ipynb_checkpoints -exec rm -rf {} + 2>/dev/null || true
@@ -56,5 +58,6 @@ clean-all: clean
 verify: clean
 	$(MAKE) test
 	$(MAKE) train
+	$(MAKE) train-temporal
 	$(MAKE) notebooks
 	@echo "✔ verify: full pipeline reproduced from scratch"
