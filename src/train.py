@@ -127,17 +127,65 @@ def results_table(results: dict) -> pd.DataFrame:
     return pd.DataFrame(rows).set_index("model")
 
 
+def save_artifacts(results: dict, X_te, y_te, table: pd.DataFrame, out_dir) -> None:
+    """Persist trained model + test predictions + results table + best
+    params + threshold for the downstream notebooks."""
+    import json
+    from pathlib import Path
+    import joblib
+
+    from .evaluate import (
+        CostMatrix, cost_optimal_threshold, threshold_sweep, expected_cost,
+    )
+
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    lgbm = results["lightgbm_tuned"]
+    joblib.dump(lgbm["model"], out / "lightgbm_tuned.joblib")
+    X_te.to_csv(out / "X_test.csv", index=False)
+    y_te.to_frame("default").to_csv(out / "y_test.csv", index=False)
+    np.save(out / "y_prob_lightgbm.npy", lgbm["y_prob"])
+    np.save(out / "y_prob_logreg.npy", results["logistic_regression"]["y_prob"])
+    np.save(out / "y_prob_rf.npy", results["random_forest"]["y_prob"])
+    table.to_csv(out / "results_table.csv")
+
+    bp = lgbm["best_params"]
+    json.dump({k: (float(v) if hasattr(v, "item") else v) for k, v in bp.items()},
+              open(out / "best_params.json", "w"), indent=2)
+
+    cost = CostMatrix()
+    sweep = threshold_sweep(y_te, lgbm["y_prob"], cost)
+    thr_opt = float(sweep.loc[sweep["expected_cost"].idxmin(), "threshold"])
+    cost_05 = expected_cost(y_te, lgbm["y_prob"], 0.5, cost)
+    cost_opt = float(sweep["expected_cost"].min())
+    json.dump({"cost_optimal": thr_opt,
+               "cost_at_default": cost_05,
+               "cost_at_optimal": cost_opt},
+              open(out / "thresholds.json", "w"), indent=2)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--quick", action="store_true",
                         help="5,000 rows + 10 tuning iters for a fast smoke test")
+    parser.add_argument("--save", action="store_true",
+                        help="persist artifacts to reports/artifacts/ "
+                             "(skipped by default so --quick stays disposable)")
     args = parser.parse_args()
 
-    results, _ = fit_and_evaluate_all(quick=args.quick)
+    results, splits = fit_and_evaluate_all(quick=args.quick)
     table = results_table(results)
     pd.set_option("display.width", 200)
     pd.set_option("display.max_columns", 20)
     print(table)
+
+    if args.save:
+        from pathlib import Path
+        _, X_te, _, y_te = splits
+        out = Path(__file__).resolve().parent.parent / "reports" / "artifacts"
+        save_artifacts(results, X_te, y_te, table, out)
+        print(f"\nArtifacts saved to {out}")
 
 
 if __name__ == "__main__":
