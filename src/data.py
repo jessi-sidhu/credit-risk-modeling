@@ -65,9 +65,12 @@ def temporal_split(
     return train.reset_index(drop=True), val.reset_index(drop=True), test.reset_index(drop=True)
 
 
+DEFAULT_N = 50_000
+
+
 def load_data(
     source: str = "synthetic",
-    n: int = 50_000,
+    n: int = DEFAULT_N,
     seed: int = 42,
     regenerate: bool = False,
 ) -> pd.DataFrame:
@@ -75,8 +78,11 @@ def load_data(
         if SYNTH_PATH.exists() and not regenerate:
             return pd.read_csv(SYNTH_PATH, parse_dates=["issue_d"])
         df = generate(n=n, seed=seed)
-        SYNTH_PATH.parent.mkdir(parents=True, exist_ok=True)
-        df.to_csv(SYNTH_PATH, index=False)
+        # Only cache when we generated the default-sized canonical file,
+        # so callers asking for a smaller subset don't pollute the cache.
+        if n == DEFAULT_N:
+            SYNTH_PATH.parent.mkdir(parents=True, exist_ok=True)
+            df.to_csv(SYNTH_PATH, index=False)
         return df
     if source == "lendingclub":
         return _load_lendingclub()

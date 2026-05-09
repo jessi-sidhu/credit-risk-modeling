@@ -10,6 +10,7 @@ help:
 	@echo "  smoke       quick training run (5k rows, 10 tuning iters, < 90s)"
 	@echo "  train       full training run with 30 tuning iters (~7 min)"
 	@echo "  train-temporal  random vs out-of-time split comparison (~30s)"
+	@echo "  train-dl        train MLP and FT-Transformer in PyTorch (~3-5 min)"
 	@echo "  notebooks   execute all notebooks in order, in-place"
 	@echo "  all         install -> test -> train -> notebooks"
 	@echo "  verify      wipe generated artifacts, then run all (full reproduce)"
@@ -32,6 +33,9 @@ train:
 
 train-temporal:
 	$(PY) -m src.train --temporal --save
+
+train-dl:
+	$(PY) -m src.tabular_dl_train --save
 
 notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/01_eda.ipynb            --inplace --ExecutePreprocessor.timeout=600
