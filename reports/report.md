@@ -258,3 +258,50 @@ Same model architecture and hyperparameters fitted under two methodologies — r
 **What this still doesn't capture.** Feature-distribution drift between origination and outcome resolution. Real loans default 6–18 months after origination; by the time you have labels, the input distribution has already moved on. The PSI monitor (§13c) catches input-side drift; a delayed-outcome monitor catches output-side performance erosion. Both are needed in production.
 
 **Reproduce** with `make train-temporal` (deterministic via `RANDOM_STATE = 42`).
+
+## 13f. Tabular deep learning bake-off (done)
+
+See [`notebooks/08_tabular_dl.ipynb`](../notebooks/08_tabular_dl.ipynb).
+
+Two PyTorch models implemented from scratch and benchmarked against the existing tuned LightGBM on the same 80/20 train/test split:
+
+1. **MLP** (`src/tabular_dl.py::MLP`): per-categorical embedding (size 16) + standardized numerics, concatenated, fed into a 3-layer MLP (128/64/32 with dropout 0.2).
+2. **FT-Transformer** (`src/tabular_dl.py::FTTransformer`, Gorishniy et al. 2021): each numerical feature gets a per-feature linear tokenizer; each categorical column gets its own embedding table. All tokens are stacked, a learned [CLS] is prepended, and 3 pre-norm Transformer blocks (8 heads, d_token=64, FFN multiplier 2) attend across them. Final [CLS] embedding feeds a small classification head.
+
+Both trained with AdamW (`lr=1e-3, weight_decay=1e-4`), cosine LR schedule, BCE with `pos_weight = (1-y).sum() / y.sum()` for the 18% imbalance, and early stopping on validation PR-AUC. Apple Silicon MPS used when available.
+
+Results on the same held-out 10k test set:
+
+| Model | PR-AUC | ROC-AUC | Train time |
+|---|---:|---:|---:|
+| Logistic regression (balanced) | 0.745 | 0.924 | <1s |
+| Random forest (300 trees) | 0.721 | 0.916 | 4s |
+| LightGBM (tuned, 30 RandomizedSearchCV iters) | 0.740 | 0.922 | ~7 min |
+| MLP (PyTorch) | 0.739 | 0.921 | 16s on MPS |
+| FT-Transformer (PyTorch) | 0.737 | 0.921 | 102s on MPS |
+
+![PR curves: GBM vs PyTorch DL](figures/pr_curves_dl.png)
+
+**The honest finding:** all five models are within ~0.4 PR-AUC points of each other. Tabular deep learning does not beat gradient boosting on this dataset, which mirrors the published Grinsztajn et al. 2022 result. DL pulls ahead on tabular data when the feature count is large, the categoricals are very high-cardinality, or the dataset is much bigger.
+
+The MLP matches the Transformer at 6x lower train cost. On this DGP the additive structure means an MLP captures most of what attention would have given.
+
+### DL-side audits
+
+The same audit dimensions from §9-13 carry over to the DL model. Calibration, permutation importance, and fairness re-run for the FT-Transformer in notebook 08:
+
+| Method | Brier | ECE |
+|---|---:|---:|
+| LightGBM | 0.081 | 0.008 |
+| MLP (PyTorch) | 0.125 | 0.164 |
+| FT-Transformer (PyTorch) | 0.112 | 0.122 |
+
+The PyTorch models trained with `pos_weight` produce inflated probabilities. This is a known consequence of class-weighted BCE: ranking is preserved, but the probability surface is pushed up. To use the DL models in the cost-sensitive operating-point selector from §8, run them through the existing Platt or isotonic recalibrator on a validation fold first.
+
+**Permutation importance** on the FT-Transformer ranks `fico`, `dti`, `grade`, `int_rate`, `loan_to_income`, and `installment_to_income` at the top, matching what LightGBM SHAP found in §9. Both pure-noise features sit at the bottom with PR-AUC drops below 0.002, the sanity check the synthetic DGP was built to enable.
+
+![FT-Transformer permutation importance](figures/dl_permutation_importance.png)
+
+**Fairness** on the FT-Transformer at its cost-optimal threshold (post-recalibration would shift this; reported here at the raw threshold for direct comparison): four-fifths-rule passes at ratio 0.918 (LightGBM was 0.923). TPR parity within 3% across groups, FPR parity within 30%. Proxy discrimination through income / FICO is a property of the data, not the architecture.
+
+**Reproduce** the DL bake-off with `make train-dl` (deterministic via `RANDOM_STATE = 42` threaded through PyTorch generators).

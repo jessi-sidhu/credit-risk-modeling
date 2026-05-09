@@ -45,13 +45,15 @@ notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/07_temporal.ipynb       --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/05_drift.ipynb          --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/06_fairness.ipynb       --inplace --ExecutePreprocessor.timeout=600
+	$(JUPYTER) nbconvert --to notebook --execute notebooks/08_tabular_dl.ipynb     --inplace --ExecutePreprocessor.timeout=900
 
-all: install test train train-temporal notebooks
+all: install test train train-temporal train-dl notebooks
 
 clean:
 	rm -rf reports/artifacts/*.joblib reports/artifacts/*.csv \
 	       reports/artifacts/*.npy reports/artifacts/*.json \
-	       reports/artifacts/temporal/* data/synthetic/*.csv
+	       reports/artifacts/temporal/* reports/artifacts/dl/* \
+	       data/synthetic/*.csv
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .ipynb_checkpoints -exec rm -rf {} + 2>/dev/null || true
@@ -63,5 +65,6 @@ verify: clean
 	$(MAKE) test
 	$(MAKE) train
 	$(MAKE) train-temporal
+	$(MAKE) train-dl
 	$(MAKE) notebooks
 	@echo "✔ verify: full pipeline reproduced from scratch"
