@@ -305,3 +305,70 @@ The PyTorch models trained with `pos_weight` produce inflated probabilities. Thi
 **Fairness** on the FT-Transformer at its cost-optimal threshold (post-recalibration would shift this; reported here at the raw threshold for direct comparison): four-fifths-rule passes at ratio 0.918 (LightGBM was 0.923). TPR parity within 3% across groups, FPR parity within 30%. Proxy discrimination through income / FICO is a property of the data, not the architecture.
 
 **Reproduce** the DL bake-off with `make train-dl` (deterministic via `RANDOM_STATE = 42` threaded through PyTorch generators).
+
+## 13g. Conformal prediction (done)
+
+See [`notebooks/09_conformal.ipynb`](../notebooks/09_conformal.ipynb).
+
+Every model in this project produces a point estimate of `P(default)`. None of them tells you *how confident* that estimate is per loan. Split conformal prediction (Vovk et al. 2005; Angelopoulos & Bates 2023) wraps any black-box model in a finite-sample, distribution-free coverage guarantee: with probability at least `1 - alpha`, the prediction set contains the true label.
+
+For credit risk this turns the model output into one of three actions:
+
+| Set | Action |
+|---|---|
+| `{paid}` | confident the loan repays; auto-approve |
+| `{default}` | confident the loan defaults; auto-reject |
+| `{paid, default}` | not confident enough; route to a manual underwriter |
+
+Empirical coverage on the LightGBM probabilities, calibrated on a held-out half of test and evaluated on the other half:
+
+| alpha | Target coverage | Empirical coverage | Avg set size | % singleton | % uncertain |
+|---:|---:|---:|---:|---:|---:|
+| 0.05 | 0.95 | ~0.95 | ~1.4 | ~60% | ~40% |
+| 0.10 | 0.90 | ~0.90 | ~1.2 | ~80% | ~20% |
+| 0.20 | 0.80 | ~0.80 | ~1.0 | ~95% | ~5% |
+
+Coverage tracks the target within ~1 point at every alpha, as the theory promises. The fraction of `{paid, default}` sets is the operationally meaningful number: that's the rate at which the model would honestly defer to a human reviewer.
+
+![Conformal set sizes](figures/conformal_set_sizes.png)
+
+**Conditional coverage by group** is *not* a guarantee of conformal prediction; the marginal `1 - alpha` is. If empirical coverage drops in some protected group, the model is concentrating its uncertainty there. That's a fairness signal that point-prediction parity (§13d) cannot detect.
+
+![Conformal coverage by group](figures/conformal_by_group.png)
+
+This pairs with the cost-aware threshold (§8): the threshold tells you what to do for confident predictions; the conformal set tells you which predictions to trust.
+
+## 13h. Stacking ensemble (done)
+
+See [`notebooks/10_stacking.ipynb`](../notebooks/10_stacking.ipynb).
+
+A logistic-regression meta-learner over the probability outputs of all five base models. The test set is split in half: the first half is the meta-learner's training data (each base model's predictions on those rows are honest out-of-sample because the bases never saw test); the second half is the stacked predictor's evaluation set.
+
+Pairwise base-model probability correlations sit at 0.85-0.95: high but not 1.0, which is why a meta-learner can extract any signal at all. Fitted meta-learner weights:
+
+| Base | Weight |
+|---|---:|
+| logistic_regression | +3.22 |
+| mlp | +2.06 |
+| random_forest | +1.03 |
+| lightgbm | +0.91 |
+| ftt | -0.72 |
+
+The negative weight on FT-Transformer means the meta-learner uses it as a contrast / correction signal rather than as a primary predictor.
+
+Headline numbers on the eval half:
+
+| Model | PR-AUC | ROC-AUC | Brier |
+|---|---:|---:|---:|
+| logistic_regression | 0.747 | 0.922 | 0.116 |
+| lightgbm | 0.741 | 0.920 | 0.083 |
+| **stack** | **0.741** | **0.921** | **0.084** |
+| mlp | 0.740 | 0.919 | 0.124 |
+| ftt | 0.739 | 0.920 | 0.111 |
+| random_forest | 0.718 | 0.913 | 0.086 |
+
+The stack matches LightGBM and lands within 0.6 PR-AUC points of the best base. **The honest finding**: stacking buys little here because the base models are highly correlated and LR alone is at the additive-DGP ceiling. With more diverse bases (a kNN, a calibrated SVM, a sequence model on the temporal cohorts) the gain is usually larger.
+
+![Stack vs base models](figures/stacking_pr_curves.png)
+
+The cost-aware threshold flow from §8 carries over: stacked-probability sweep produces a cost-optimal threshold of 0.13, with a 33% expected-loss reduction over the naive 0.5 threshold. That mirrors the LightGBM and FT-Transformer results, confirming the cost-asymmetry signal is robust to model choice.

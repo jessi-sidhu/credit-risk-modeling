@@ -6,7 +6,7 @@ PyTorch FT-Transformer and MLP for credit risk on a Lending Club style dataset, 
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.8-red.svg)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.5-orange.svg)
 ![LightGBM](https://img.shields.io/badge/LightGBM-4.6-green.svg)
-![tests](https://img.shields.io/badge/tests-63%20passing-brightgreen.svg)
+![tests](https://img.shields.io/badge/tests-75%20passing-brightgreen.svg)
 
 ## Results
 
@@ -57,6 +57,8 @@ make notebooks       # execute all 8 notebooks in order
 - `drift.py` Population Stability Index per feature
 - `fairness.py` group metrics, parity ratios, four-fifths rule
 - `monitor.py` rolling performance with configurable label-resolution lag
+- `conformal.py` split conformal prediction for binary classification (distribution-free coverage)
+- `stacking.py` logistic-regression meta-learner over base-model probabilities
 
 `notebooks/`:
 - `01_eda.ipynb` distributions, correlations, default rate by category
@@ -67,8 +69,10 @@ make notebooks       # execute all 8 notebooks in order
 - `06_fairness.ipynb` per-group approval rate, FNR, FPR, four-fifths check
 - `07_temporal.ipynb` random vs out-of-time split comparison
 - `08_tabular_dl.ipynb` MLP and FT-Transformer in PyTorch vs LightGBM, plus DL-side audits
+- `09_conformal.ipynb` distribution-free prediction sets with finite-sample coverage guarantees, marginal and per-group
+- `10_stacking.ipynb` logistic-regression meta-learner over the five base models, with cost-aware threshold
 
-`tests/`: 63 pytest tests. Coverage includes the leakage guard, threshold selection, calibration, drift, fairness, monitor, the LC swap fixture, `temporal_split`, and DL forward / backward / overfit-tiny-batch sanity.
+`tests/`: 75 pytest tests. Coverage includes the leakage guard, threshold selection, calibration, drift, fairness, monitor, the LC swap fixture, `temporal_split`, and DL forward / backward / overfit-tiny-batch sanity.
 
 ## Why these choices
 

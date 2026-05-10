@@ -46,6 +46,8 @@ notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/05_drift.ipynb          --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/06_fairness.ipynb       --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/08_tabular_dl.ipynb     --inplace --ExecutePreprocessor.timeout=900
+	$(JUPYTER) nbconvert --to notebook --execute notebooks/09_conformal.ipynb      --inplace --ExecutePreprocessor.timeout=300
+	$(JUPYTER) nbconvert --to notebook --execute notebooks/10_stacking.ipynb       --inplace --ExecutePreprocessor.timeout=300
 
 all: install test train train-temporal train-dl notebooks
 
