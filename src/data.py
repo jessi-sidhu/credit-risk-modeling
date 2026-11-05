@@ -28,10 +28,15 @@ Real LC mapping (see `_load_lendingclub`):
     open_acc         -> open_acc
     revol_util       -> revol_util (parsed: "45.2%" -> 45.2)
     issue_d          -> issue_d (parsed: "Dec-2014" -> 2014-12-01)
-    loan_status      -> default (Charged Off / Default / Late > 30 -> 1)
+    loan_status      -> default (see TARGET_MAP; unfinished loans dropped)
+
+Target definition: only FINISHED loans are kept (Fully Paid / Charged Off /
+Default, including the "Does not meet the credit policy" variants), and only
+from cohorts that have fully matured by SNAPSHOT_DATE.
 """
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pandas as pd
@@ -42,7 +47,23 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SYNTH_PATH = _PROJECT_ROOT / "data" / "synthetic" / "loans.csv"
 RAW_DIR = _PROJECT_ROOT / "data" / "archive"
 
-DEFAULT_STATUSES = {"Charged Off", "Default", "Late (31-120 days)"}
+logger = logging.getLogger(__name__)
+
+# Finished loans only. Anything not listed (Current, Late (16-30 days),
+# Late (31-120 days), In Grace Period) has no final outcome yet and is dropped.
+TARGET_MAP = {
+    "Fully Paid": 0,
+    "Charged Off": 1,
+    "Default": 1,
+    "Does not meet the credit policy. Status:Fully Paid": 0,
+    "Does not meet the credit policy. Status:Charged Off": 1,
+}
+
+# Last month covered by the 2007-2018Q4 accepted file. A loan is kept only
+# if issue_d + term months <= SNAPSHOT_DATE. Without this, recent cohorts
+# contain only loans that already ended (mostly early payoffs and fast
+# charge-offs), which biases the default rate.
+SNAPSHOT_DATE = "2019-03-31"
 
 # Only the raw LC columns we map, plus loan_status. The full accepted
 # file has ~150 columns and is ~1.6 GB; reading a subset keeps memory down.
@@ -134,12 +155,26 @@ def find_accepted_file(raw_dir: Path = RAW_DIR) -> Path:
     )
 
 
-def _load_lendingclub(raw_dir: Path = RAW_DIR) -> pd.DataFrame:
+def _is_matured(issue_d: pd.Series, term: pd.Series, snapshot_date: str) -> pd.Series:
+    """True where the loan's scheduled final month is on or before the snapshot."""
+    snap = pd.Timestamp(snapshot_date)
+    end_month = issue_d.dt.year * 12 + (issue_d.dt.month - 1) + term
+    return end_month <= snap.year * 12 + (snap.month - 1)
+
+
+def _load_lendingclub(
+    raw_dir: Path = RAW_DIR,
+    snapshot_date: str = SNAPSHOT_DATE,
+) -> pd.DataFrame:
     path = find_accepted_file(raw_dir)
     raw = pd.read_csv(path, usecols=LC_USECOLS, low_memory=False)
     # The LC export contains summary/footer lines ("Total amount funded in
     # policy code ...") that are empty in every column we read.
     raw = raw.dropna(subset=["loan_amnt", "term"])
+    logger.info("LC rows read: %d", len(raw))
+
+    raw = raw[raw["loan_status"].isin(TARGET_MAP)]
+    logger.info("after keeping finished loans only: %d", len(raw))
     fico = raw[["fico_range_low", "fico_range_high"]].mean(axis=1)
     df = pd.DataFrame({
         "loan_amount": raw["loan_amnt"],
@@ -157,7 +192,13 @@ def _load_lendingclub(raw_dir: Path = RAW_DIR) -> pd.DataFrame:
             raw["revol_util"].astype(str).str.rstrip("%"),
             errors="coerce",
         ),
-        "default": raw["loan_status"].isin(DEFAULT_STATUSES).astype(int),
+        "default": raw["loan_status"].map(TARGET_MAP).astype(int),
         "issue_d": pd.to_datetime(raw["issue_d"], format="%b-%Y", errors="coerce"),
     })
-    return df.dropna(subset=["fico", "dti", "annual_income", "loan_amount", "issue_d"])
+    df = df.dropna(subset=["fico", "dti", "annual_income", "loan_amount", "issue_d"])
+    logger.info("after dropping rows missing key fields: %d", len(df))
+
+    df = df[_is_matured(df["issue_d"], df["term"], snapshot_date)]
+    logger.info("after matured-cohort filter (snapshot %s): %d", snapshot_date, len(df))
+    logger.info("final default rate: %.4f", df["default"].mean())
+    return df

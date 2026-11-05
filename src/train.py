@@ -9,6 +9,7 @@ end-to-end smoke test finishes in under a minute.
 from __future__ import annotations
 
 import argparse
+import logging
 from pathlib import Path
 from typing import Any, Tuple
 
@@ -308,6 +309,7 @@ def main() -> None:
                              "reports/artifacts/temporal/")
     args = parser.parse_args()
 
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     pd.set_option("display.width", 200)
     pd.set_option("display.max_columns", 20)
 

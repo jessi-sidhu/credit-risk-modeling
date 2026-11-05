@@ -12,29 +12,53 @@ import pytest
 from src.data import _load_lendingclub, find_accepted_file
 
 
+# Rows 0-6 survive the target filters; rows 7-12 must be dropped.
+_DNM = "Does not meet the credit policy. Status:"
+_STATUS = [
+    "Fully Paid", "Fully Paid", "Charged Off", "Default",
+    _DNM + "Fully Paid", _DNM + "Charged Off", "Fully Paid",
+    "Current", "Late (31-120 days)", "Late (16-30 days)", "In Grace Period",
+    "Fully Paid", "Charged Off",
+]
+_TERM = [" 36 months", " 60 months", "36 months", " 60 months",
+         " 36 months", " 60 months", " 36 months",
+         " 36 months", " 36 months", " 36 months", " 36 months",
+         " 60 months", " 36 months"]
+_ISSUE = ["Dec-2014", "Mar-2013", "Aug-2015", "Jun-2012",
+          "Jan-2010", "Nov-2009",
+          "Mar-2016",   # 36m -> ends Mar-2019 == snapshot month: kept
+          "Jan-2015", "Jan-2015", "Jan-2015", "Jan-2015",
+          "Jan-2016",   # 60m -> ends Jan-2021: unmatured, dropped
+          "Apr-2016"]   # 36m -> ends Apr-2019: unmatured, dropped
+N_KEPT = 7
+
+
 def _lc_fixture() -> pd.DataFrame:
-    """Six rows that exercise the LC quirks `_load_lendingclub` must handle."""
+    """Rows that exercise the LC quirks and target filters of `_load_lendingclub`."""
+    n = len(_STATUS)
     return pd.DataFrame({
-        "loan_amnt": [10_000, 20_000, 5_000, 35_000, 8_000, 15_000],
-        "term": [" 36 months", " 60 months", "36 months", " 60 months",
-                 " 36 months", " 60 months"],
-        "int_rate": ["12.45%", "8.99%", "20.50%", "15.27%", "6.89%", "24.99%"],
-        "grade": ["B", "A", "E", "C", "A", "G"],
+        "loan_amnt": [10_000, 20_000, 5_000, 35_000, 8_000, 15_000, 12_000] + [9_000] * (n - 7),
+        "term": _TERM,
+        "int_rate": ["12.45%", "8.99%", "20.50%", "15.27%", "6.89%", "24.99%", "11.00%"]
+                    + ["10.00%"] * (n - 7),
+        "grade": ["B", "A", "E", "C", "A", "G", "B"] + ["B"] * (n - 7),
         "emp_length": ["10+ years", "< 1 year", "5 years", "n/a",
-                       "2 years", None],
-        "home_ownership": ["RENT", "MORTGAGE", "OWN", "RENT", "MORTGAGE", "RENT"],
-        "annual_inc": [60_000, 120_000, 35_000, 90_000, 75_000, 45_000],
+                       "2 years", None, "3 years"] + ["1 year"] * (n - 7),
+        "home_ownership": ["RENT", "MORTGAGE", "OWN", "RENT", "MORTGAGE", "RENT", "OWN"]
+                          + ["RENT"] * (n - 7),
+        "annual_inc": [60_000, 120_000, 35_000, 90_000, 75_000, 45_000, 55_000]
+                      + [50_000] * (n - 7),
         "purpose": ["debt_consolidation", "credit_card", "small_business",
-                    "home_improvement", "car", "medical"],
-        "dti": [18.5, 8.2, 32.1, 15.6, 10.0, 28.4],
-        "fico_range_low":  [690, 760, 640, 715, 770, 615],
-        "fico_range_high": [694, 764, 644, 719, 774, 619],
-        "open_acc": [10, 8, 14, 7, 6, 12],
-        "revol_util": ["45.2%", "20.0%", "85.5%", "55.7%", None, "92.1%"],
-        "issue_d": ["Dec-2014", "Mar-2015", "Aug-2016", "Jun-2017",
-                    "Jan-2018", "Nov-2018"],
-        "loan_status": ["Fully Paid", "Current", "Charged Off",
-                        "Late (31-120 days)", "Fully Paid", "Default"],
+                    "home_improvement", "car", "medical", "other"]
+                   + ["credit_card"] * (n - 7),
+        "dti": [18.5, 8.2, 32.1, 15.6, 10.0, 28.4, 12.0] + [15.0] * (n - 7),
+        "fico_range_low":  [690, 760, 640, 715, 770, 615, 700] + [700] * (n - 7),
+        "fico_range_high": [694, 764, 644, 719, 774, 619, 704] + [704] * (n - 7),
+        "open_acc": [10, 8, 14, 7, 6, 12, 9] + [9] * (n - 7),
+        "revol_util": ["45.2%", "20.0%", "85.5%", "55.7%", None, "92.1%", "30.0%"]
+                      + ["40.0%"] * (n - 7),
+        "issue_d": _ISSUE,
+        "loan_status": _STATUS,
     })
 
 
@@ -80,9 +104,30 @@ def test_emp_length_handles_messy_strings(tmp_path):
 def test_loan_status_maps_to_binary_default(tmp_path):
     df = _load_lendingclub(raw_dir=_write_fixture(tmp_path)).reset_index(drop=True)
 
-    # Charged Off, Late (31-120 days), Default -> 1
-    expected = [0, 0, 1, 1, 0, 1]
+    # Charged Off, Default, credit-policy Charged Off -> 1; Fully Paid variants -> 0
+    expected = [0, 0, 1, 1, 0, 1, 0]
     assert df["default"].tolist() == expected
+
+
+def test_unfinished_loans_dropped(tmp_path):
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path))
+    assert len(df) == N_KEPT
+    kept_dates = set(df["issue_d"].dt.strftime("%b-%Y"))
+    # Current / Late / In Grace rows were all issued Jan-2015
+    assert "Jan-2015" not in kept_dates
+
+
+def test_unmatured_loans_dropped(tmp_path):
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path))
+    dates = set(df["issue_d"].dt.strftime("%b-%Y"))
+    assert "Mar-2016" in dates          # ends exactly in the snapshot month
+    assert "Jan-2016" not in dates      # 60m, ends 2021
+    assert "Apr-2016" not in dates      # 36m, ends Apr-2019
+
+
+def test_snapshot_date_controls_maturity(tmp_path):
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path), snapshot_date="2021-12-31")
+    assert len(df) == N_KEPT + 2
 
 
 def test_fico_is_average_of_range(tmp_path):
@@ -107,7 +152,7 @@ def test_blank_footer_rows_dropped(tmp_path):
     with open(path, "a") as f:
         f.write("," * (fx.shape[1] - 1) + "\n")
     df = _load_lendingclub(raw_dir=fixture_dir)
-    assert len(df) == len(fx)
+    assert len(df) == N_KEPT
 
 
 def test_missing_csv_raises(tmp_path):
