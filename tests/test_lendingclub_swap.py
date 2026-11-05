@@ -69,7 +69,7 @@ def _write_fixture(tmp_path) -> "Path":
 
 
 def test_load_lendingclub_returns_canonical_schema(tmp_path):
-    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path))
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path), term_months=None)
 
     expected = {
         "loan_amount", "term", "int_rate", "grade", "emp_length",
@@ -80,7 +80,7 @@ def test_load_lendingclub_returns_canonical_schema(tmp_path):
 
 
 def test_term_int_rate_revol_util_parsed_to_numbers(tmp_path):
-    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path))
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path), term_months=None)
 
     assert df["term"].dtype.kind in "iu", df["term"].dtype
     assert set(df["term"].unique()) <= {36, 60}
@@ -89,7 +89,7 @@ def test_term_int_rate_revol_util_parsed_to_numbers(tmp_path):
 
 
 def test_emp_length_handles_messy_strings(tmp_path):
-    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path)).reset_index(drop=True)
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path), term_months=None).reset_index(drop=True)
 
     # 10+ years -> 10
     assert df.loc[0, "emp_length"] == 10
@@ -102,7 +102,7 @@ def test_emp_length_handles_messy_strings(tmp_path):
 
 
 def test_loan_status_maps_to_binary_default(tmp_path):
-    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path)).reset_index(drop=True)
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path), term_months=None).reset_index(drop=True)
 
     # Charged Off, Default, credit-policy Charged Off -> 1; Fully Paid variants -> 0
     expected = [0, 0, 1, 1, 0, 1, 0]
@@ -110,7 +110,7 @@ def test_loan_status_maps_to_binary_default(tmp_path):
 
 
 def test_unfinished_loans_dropped(tmp_path):
-    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path))
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path), term_months=None)
     assert len(df) == N_KEPT
     kept_dates = set(df["issue_d"].dt.strftime("%b-%Y"))
     # Current / Late / In Grace rows were all issued Jan-2015
@@ -118,7 +118,7 @@ def test_unfinished_loans_dropped(tmp_path):
 
 
 def test_unmatured_loans_dropped(tmp_path):
-    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path))
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path), term_months=None)
     dates = set(df["issue_d"].dt.strftime("%b-%Y"))
     assert "Mar-2016" in dates          # ends exactly in the snapshot month
     assert "Jan-2016" not in dates      # 60m, ends 2021
@@ -126,18 +126,19 @@ def test_unmatured_loans_dropped(tmp_path):
 
 
 def test_snapshot_date_controls_maturity(tmp_path):
-    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path), snapshot_date="2021-12-31")
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path), snapshot_date="2021-12-31",
+                           term_months=None)
     assert len(df) == N_KEPT + 2
 
 
 def test_fico_is_average_of_range(tmp_path):
-    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path)).reset_index(drop=True)
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path), term_months=None).reset_index(drop=True)
     # row 0: low=690 high=694 -> 692
     assert df.loc[0, "fico"] == pytest.approx(692.0)
 
 
 def test_issue_d_parsed_to_datetime(tmp_path):
-    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path)).reset_index(drop=True)
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path), term_months=None).reset_index(drop=True)
     assert df["issue_d"].dtype == "datetime64[ns]"
     assert df["issue_d"].iloc[0] == pd.Timestamp("2014-12-01")
 
@@ -151,7 +152,7 @@ def test_blank_footer_rows_dropped(tmp_path):
     fx.to_csv(path, index=False)
     with open(path, "a") as f:
         f.write("," * (fx.shape[1] - 1) + "\n")
-    df = _load_lendingclub(raw_dir=fixture_dir)
+    df = _load_lendingclub(raw_dir=fixture_dir, term_months=None)
     assert len(df) == N_KEPT
 
 
@@ -195,3 +196,10 @@ def test_find_accepted_never_returns_rejected(tmp_path):
 def test_find_accepted_is_case_insensitive(tmp_path):
     (tmp_path / "Accepted_LOANS.CSV").write_text("x\n")
     assert find_accepted_file(tmp_path).name == "Accepted_LOANS.CSV"
+
+
+def test_default_keeps_36_month_loans_only(tmp_path):
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path))
+    assert set(df["term"]) == {36}
+    # kept rows 0, 2, 4, 6 of the fixture are the 36-month ones
+    assert len(df) == 4

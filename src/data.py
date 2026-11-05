@@ -32,7 +32,8 @@ Real LC mapping (see `_load_lendingclub`):
 
 Target definition: only FINISHED loans are kept (Fully Paid / Charged Off /
 Default, including the "Does not meet the credit policy" variants), and only
-from cohorts that have fully matured by SNAPSHOT_DATE.
+from cohorts that have fully matured by SNAPSHOT_DATE, and only 36-month
+loans (see TERM_MONTHS).
 """
 from __future__ import annotations
 
@@ -64,6 +65,13 @@ TARGET_MAP = {
 # contain only loans that already ended (mostly early payoffs and fast
 # charge-offs), which biases the default rate.
 SNAPSHOT_DATE = "2019-03-31"
+
+# Only 36-month loans are modelled. With the matured-cohort filter, no
+# 60-month loan issued after 2014-03 survives, so an out-of-time test set
+# (2015+) would contain 36-month loans only while training mixed in
+# 60-month loans that default about twice as often. Restricting to one
+# product keeps train, validation and test comparable.
+TERM_MONTHS = 36
 
 # Only the raw LC columns we map, plus loan_status. The full accepted
 # file has ~150 columns and is ~1.6 GB; reading a subset keeps memory down.
@@ -165,6 +173,7 @@ def _is_matured(issue_d: pd.Series, term: pd.Series, snapshot_date: str) -> pd.S
 def _load_lendingclub(
     raw_dir: Path = RAW_DIR,
     snapshot_date: str = SNAPSHOT_DATE,
+    term_months: int | None = TERM_MONTHS,
 ) -> pd.DataFrame:
     path = find_accepted_file(raw_dir)
     raw = pd.read_csv(path, usecols=LC_USECOLS, low_memory=False)
@@ -200,5 +209,9 @@ def _load_lendingclub(
 
     df = df[_is_matured(df["issue_d"], df["term"], snapshot_date)]
     logger.info("after matured-cohort filter (snapshot %s): %d", snapshot_date, len(df))
+
+    if term_months is not None:
+        df = df[df["term"] == term_months]
+        logger.info("after keeping %d-month loans only: %d", term_months, len(df))
     logger.info("final default rate: %.4f", df["default"].mean())
     return df

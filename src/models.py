@@ -4,7 +4,9 @@ Each returns a `Pipeline` of (preprocessor, classifier) so the
 preprocessor is fit on the training fold only — protecting against
 leakage end-to-end.
 
-- Logistic regression baseline: scaled numerics, balanced class weight.
+- Logistic regression benchmark: scaled numerics, no class reweighting so
+  its probabilities stay comparable on Brier/ECE. Class imbalance is
+  handled by the cost-optimal threshold instead.
 - LightGBM: defaults; the tuned version is built in `train.py`.
 """
 from __future__ import annotations
@@ -22,7 +24,6 @@ def logistic_regression() -> Pipeline:
         ("pre", make_preprocessor(scale_numeric=True)),
         ("clf", LogisticRegression(
             max_iter=2000,
-            class_weight="balanced",
             random_state=RANDOM_STATE,
         )),
     ])

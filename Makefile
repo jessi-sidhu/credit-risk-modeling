@@ -38,7 +38,6 @@ notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/02_modeling.ipynb       --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/03_interpretation.ipynb --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/04_calibration.ipynb    --inplace --ExecutePreprocessor.timeout=600
-	$(JUPYTER) nbconvert --to notebook --execute notebooks/07_temporal.ipynb       --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/05_drift.ipynb          --inplace --ExecutePreprocessor.timeout=600
 
 all: install test train notebooks
