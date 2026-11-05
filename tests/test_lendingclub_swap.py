@@ -203,3 +203,12 @@ def test_default_keeps_36_month_loans_only(tmp_path):
     assert set(df["term"]) == {36}
     # kept rows 0, 2, 4, 6 of the fixture are the 36-month ones
     assert len(df) == 4
+
+
+def test_row_counts_recorded_in_attrs(tmp_path):
+    df = _load_lendingclub(raw_dir=_write_fixture(tmp_path))
+    assert df.attrs["row_counts"] == {
+        "rows_read": len(_STATUS), "finished_loans": 9,
+        "key_fields_present": 9, "matured": N_KEPT, "term_36m": 4,
+    }
+    assert df.attrs["snapshot_date"] == "2019-03-31"

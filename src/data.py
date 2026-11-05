@@ -180,9 +180,11 @@ def _load_lendingclub(
     # The LC export contains summary/footer lines ("Total amount funded in
     # policy code ...") that are empty in every column we read.
     raw = raw.dropna(subset=["loan_amnt", "term"])
+    counts = {"rows_read": len(raw)}
     logger.info("LC rows read: %d", len(raw))
 
     raw = raw[raw["loan_status"].isin(TARGET_MAP)]
+    counts["finished_loans"] = len(raw)
     logger.info("after keeping finished loans only: %d", len(raw))
     fico = raw[["fico_range_low", "fico_range_high"]].mean(axis=1)
     df = pd.DataFrame({
@@ -205,13 +207,23 @@ def _load_lendingclub(
         "issue_d": pd.to_datetime(raw["issue_d"], format="%b-%Y", errors="coerce"),
     })
     df = df.dropna(subset=["fico", "dti", "annual_income", "loan_amount", "issue_d"])
+    counts["key_fields_present"] = len(df)
     logger.info("after dropping rows missing key fields: %d", len(df))
 
     df = df[_is_matured(df["issue_d"], df["term"], snapshot_date)]
+    counts["matured"] = len(df)
     logger.info("after matured-cohort filter (snapshot %s): %d", snapshot_date, len(df))
 
     if term_months is not None:
         df = df[df["term"] == term_months]
+        counts[f"term_{term_months}m"] = len(df)
         logger.info("after keeping %d-month loans only: %d", term_months, len(df))
     logger.info("final default rate: %.4f", df["default"].mean())
+
+    df = df.copy()
+    df.attrs["row_counts"] = {k: int(v) for k, v in counts.items()}
+    df.attrs["snapshot_date"] = snapshot_date
+    df.attrs["term_months"] = term_months
+    df.attrs["default_rate"] = float(df["default"].mean())
+    df.attrs["source_file"] = path.name
     return df

@@ -164,6 +164,7 @@ def fit_and_evaluate_oot(
     """Out-of-time pipeline. Returns (results, splits)."""
     if df is None:
         df = load_data()
+    data_info = dict(df.attrs)          # row counts etc. from the LC loader
     df = engineer_features(df)
     if quick:
         df = df.sample(n=5_000, random_state=RANDOM_STATE).reset_index(drop=True)
@@ -197,6 +198,8 @@ def fit_and_evaluate_oot(
         n_boot=N_BOOTSTRAP, seed=RANDOM_STATE,
     )
     results["meta"] = {
+        "data": data_info,
+        "quick": quick,
         "split": "out_of_time",
         "train_until": train_until,
         "test_from": test_from,
