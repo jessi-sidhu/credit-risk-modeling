@@ -133,14 +133,18 @@ At the 0.5 threshold LR flags 480 loans and LightGBM flags none, so the expected
 - **36-month loans only.** 60-month loans are excluded because the matured out-of-time test set contains none.
 - **Default rate shifts over time.** Test cohorts default more often than training cohorts, and both models under-predict on the test set.
 - **The cost matrix is a heuristic.** 5:1 is a rule of thumb, not measured loss-given-default and margin.
-- **Notebooks not re-run.** `notebooks/01`–`05` (EDA, modeling, SHAP, calibration, drift) and their figures in `reports/figures/` still reflect the earlier synthetic dataset, and are not part of this report. Re-running them on the real data is pending.
 
-## 7. Reproduce
+## 7. Notebooks
+
+`notebooks/01`–`05` explore the same data and the same Phase 1 run (EDA, modeling, SHAP and error analysis, calibration, drift). Their findings are written in each notebook's Takeaways cell; the figures they produce are in `reports/figures/`. They only read `reports/artifacts/`, so they cannot change the numbers in this report.
+
+## 8. Reproduce
 
 ```bash
 make install
-make test     # 79 tests on synthetic fixtures
+make test     # 81 tests on synthetic fixtures
 make train    # needs data/archive/; writes metrics.json and figures/reliability.png
+make notebooks
 ```
 
 `RANDOM_STATE = 42` fixes the search, the model seeds and the bootstrap.

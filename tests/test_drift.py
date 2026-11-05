@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from src.drift import psi, psi_categorical, psi_numeric, psi_report
 
@@ -60,3 +61,23 @@ def test_psi_dispatch_handles_categorical_strings():
     base = pd.Series(["A"] * 700 + ["B"] * 300)
     current = pd.Series(["A"] * 300 + ["B"] * 700)
     assert psi(base, current) > 0.25
+
+
+def test_psi_numeric_ignores_a_few_missing_values():
+    """A handful of NaNs must not collapse the bins (PSI used to be 0)."""
+    rng = np.random.default_rng(0)
+    base = rng.normal(0, 1, 10_000)
+    cur = rng.normal(1.0, 1, 10_000)
+    base_nan, cur_nan = base.copy(), cur.copy()
+    base_nan[:3] = np.nan
+    cur_nan[:3] = np.nan
+    assert psi_numeric(base_nan, cur_nan) == pytest.approx(psi_numeric(base, cur), rel=0.02)
+    assert psi_numeric(base_nan, cur_nan) > 0.25
+
+
+def test_psi_numeric_flags_change_in_missing_rate():
+    rng = np.random.default_rng(1)
+    base = rng.normal(0, 1, 10_000)
+    cur = base.copy()
+    cur[:3_000] = np.nan            # same values, 30% now missing
+    assert psi_numeric(base, cur) > 0.25

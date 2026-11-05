@@ -5,7 +5,7 @@ Probability-of-default model for 36-month Lending Club loans (2007–2016 origin
 ![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.5-orange.svg)
 ![LightGBM](https://img.shields.io/badge/LightGBM-4.6-green.svg)
-![tests](https://img.shields.io/badge/tests-79%20passing-brightgreen.svg)
+![tests](https://img.shields.io/badge/tests-81%20passing-brightgreen.svg)
 
 ## Results
 
@@ -73,7 +73,7 @@ All features are known when the application is decided. A test (`tests/test_feat
 
 ```bash
 make install       # .venv + pinned deps
-make test          # 79 tests (synthetic fixtures; the 1.6 GB CSV is not needed)
+make test          # 81 tests (synthetic fixtures; the 1.6 GB CSV is not needed)
 make smoke         # 5,000-row run on real data, no artifacts saved
 make train         # full out-of-time run; writes reports/artifacts/metrics.json and the reliability plot
 make train-random  # random 80/20 split, comparison only
@@ -97,7 +97,6 @@ make train-random  # random 80/20 split, comparison only
 - **36-month loans only.** 60-month loans are excluded (see above); the results don't describe them.
 - **Default rate shifts over time.** The test cohorts default more often than the training cohorts, and both models under-predict on the test set. Recalibrating on recent cohorts would be needed before using the probabilities directly.
 - **The cost matrix is a heuristic.** 5:1 is a rough rule of thumb, not a lender's measured loss.
-- **Notebooks not yet re-run.** `notebooks/01`–`05` and the figures they produce (EDA, SHAP, calibration, drift) still show results from the earlier synthetic dataset. Only `reports/figures/reliability.png` comes from the real-data run.
 
 ## Layout
 
@@ -110,6 +109,12 @@ make train-random  # random 80/20 split, comparison only
 - `src/drift.py`, `src/monitor.py`, `src/interpret.py`, `src/errors.py`: PSI, rolling performance monitor, SHAP, error slicing (used by the notebooks)
 - `src/synth.py`: small synthetic generator used **only** as a test fixture
 - `reports/report.md`: full write-up
+- `notebooks/` (real data; 02–05 read the `make train` artifacts and never write them; run with `make notebooks`):
+  - `01_eda`: class balance, distributions by outcome, default rate by group and issue year
+  - `02_modeling`: headline metrics, PR curves, cost vs threshold, cost-ratio sensitivity (thresholds picked on validation)
+  - `03_interpretation`: SHAP global / beeswarm / three loans, missed defaults by purpose, grade and home ownership
+  - `04_calibration`: reliability by bin and issue quarter, Platt / isotonic recalibration fit on 2014
+  - `05_drift`: PSI train vs test, simulated shocks, label-delay performance monitor
 
 ## Reproducibility
 

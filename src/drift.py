@@ -38,15 +38,22 @@ def _bin_numeric(baseline: np.ndarray, n_bins: int) -> np.ndarray:
 
 
 def _hist(values: np.ndarray, edges: np.ndarray) -> np.ndarray:
-    counts, _ = np.histogram(values, bins=edges)
+    """Bin shares, with missing values as an extra last bin."""
+    missing = np.isnan(values)
+    counts, _ = np.histogram(values[~missing], bins=edges)
+    counts = np.append(counts, missing.sum())
     p = counts / max(counts.sum(), 1)
     return np.where(p == 0, _EPS, p)
 
 
 def psi_numeric(baseline, current, n_bins: int = 10) -> float:
+    """Quantile bins from the non-missing baseline values; missing values
+    get their own bin, so a change in the missing rate also counts as
+    drift. (np.quantile on an array containing NaN returns NaN edges,
+    which used to put every value in one bin and return PSI = 0.)"""
     baseline = np.asarray(baseline, dtype=float)
     current = np.asarray(current, dtype=float)
-    edges = _bin_numeric(baseline, n_bins)
+    edges = _bin_numeric(baseline[~np.isnan(baseline)], n_bins)
     p = _hist(baseline, edges)
     q = _hist(current, edges)
     return float(np.sum((q - p) * np.log(q / p)))
