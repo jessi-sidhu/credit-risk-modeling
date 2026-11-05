@@ -1,4 +1,4 @@
-.PHONY: help install test smoke train notebooks all clean clean-all verify
+.PHONY: help install test smoke train train-random notebooks all clean clean-all verify
 
 PY := .venv/bin/python
 JUPYTER := .venv/bin/jupyter
@@ -8,8 +8,8 @@ help:
 	@echo "  install     create .venv and install pinned deps"
 	@echo "  test        run pytest"
 	@echo "  smoke       quick training run (5k rows, 10 tuning iters, < 90s)"
-	@echo "  train       full training run with 30 tuning iters (~7 min)"
-	@echo "  train-temporal  random vs out-of-time split comparison (~30s)"
+	@echo "  train       out-of-time train/val/test run, 30 tuning iters"
+	@echo "  train-random    random-split run (comparison only)"
 	@echo "  notebooks   execute all notebooks in order, in-place"
 	@echo "  all         install -> test -> train -> notebooks"
 	@echo "  verify      wipe generated artifacts, then run all (full reproduce)"
@@ -30,8 +30,8 @@ smoke:
 train:
 	$(PY) -m src.train --save
 
-train-temporal:
-	$(PY) -m src.train --temporal --save
+train-random:
+	$(PY) -m src.train --random-split --save
 
 notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/01_eda.ipynb            --inplace --ExecutePreprocessor.timeout=600
@@ -41,12 +41,12 @@ notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/07_temporal.ipynb       --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/05_drift.ipynb          --inplace --ExecutePreprocessor.timeout=600
 
-all: install test train train-temporal notebooks
+all: install test train notebooks
 
 clean:
 	rm -rf reports/artifacts/*.joblib reports/artifacts/*.csv \
 	       reports/artifacts/*.npy reports/artifacts/*.json \
-	       reports/artifacts/temporal/* \
+	       reports/artifacts/random_split/* \
 	       data/synthetic/*.csv
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
@@ -58,6 +58,5 @@ clean-all: clean
 verify: clean
 	$(MAKE) test
 	$(MAKE) train
-	$(MAKE) train-temporal
 	$(MAKE) notebooks
 	@echo "✔ verify: full pipeline reproduced from scratch"

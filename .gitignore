@@ -37,7 +37,7 @@ reports/artifacts/*.joblib
 reports/artifacts/*.csv
 reports/artifacts/*.npy
 reports/artifacts/*.json
-reports/artifacts/temporal/*
+reports/artifacts/random_split/*
 
 # Keep folder placeholders
 !**/.gitkeep
