@@ -1,4 +1,4 @@
-.PHONY: help install test smoke train train-random notebooks all clean clean-all verify
+.PHONY: help install test smoke train train-random survival-outcomes notebooks all clean clean-all verify
 
 PY := .venv/bin/python
 JUPYTER := .venv/bin/jupyter
@@ -10,6 +10,7 @@ help:
 	@echo "  smoke       quick training run (5k rows, 10 tuning iters, < 90s)"
 	@echo "  train       out-of-time train/val/test run, 30 tuning iters"
 	@echo "  train-random    random-split run (comparison only)"
+	@echo "  survival-outcomes  Phase 2 outcome table summary + Kaplan-Meier plot"
 	@echo "  notebooks   execute all notebooks in order, in-place"
 	@echo "  all         install -> test -> train -> notebooks"
 	@echo "  verify      wipe generated artifacts, then run all (full reproduce)"
@@ -32,6 +33,9 @@ train:
 
 train-random:
 	$(PY) -m src.train --random-split --save
+
+survival-outcomes:
+	$(PY) -m src.survival_data
 
 notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/01_eda.ipynb            --inplace --ExecutePreprocessor.timeout=600

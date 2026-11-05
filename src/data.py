@@ -170,6 +170,37 @@ def _is_matured(issue_d: pd.Series, term: pd.Series, snapshot_date: str) -> pd.S
     return end_month <= snap.year * 12 + (snap.month - 1)
 
 
+# Rows missing any of these are dropped (shared with the survival loader).
+KEY_FIELDS = ["fico", "dti", "annual_income", "loan_amount", "issue_d"]
+
+
+def parse_lc_features(raw: pd.DataFrame) -> pd.DataFrame:
+    """Map raw LC application columns to the model's feature schema.
+
+    Only origination-time columns are used; no outcome column is read
+    here. Shared by the Phase 1 loader and `src/survival_data.py`.
+    """
+    fico = raw[["fico_range_low", "fico_range_high"]].mean(axis=1)
+    return pd.DataFrame({
+        "loan_amount": raw["loan_amnt"],
+        "term": raw["term"].astype(str).str.extract(r"(\d+)")[0].astype(int),
+        "int_rate": raw["int_rate"].astype(str).str.rstrip("%").astype(float),
+        "grade": raw["grade"],
+        "emp_length": _parse_lc_emp_length(raw["emp_length"]),
+        "home_ownership": raw["home_ownership"],
+        "annual_income": raw["annual_inc"],
+        "purpose": raw["purpose"],
+        "dti": raw["dti"],
+        "fico": fico,
+        "open_acc": raw["open_acc"],
+        "revol_util": pd.to_numeric(
+            raw["revol_util"].astype(str).str.rstrip("%"),
+            errors="coerce",
+        ),
+        "issue_d": pd.to_datetime(raw["issue_d"], format="%b-%Y", errors="coerce"),
+    })
+
+
 def _load_lendingclub(
     raw_dir: Path = RAW_DIR,
     snapshot_date: str = SNAPSHOT_DATE,
@@ -186,27 +217,11 @@ def _load_lendingclub(
     raw = raw[raw["loan_status"].isin(TARGET_MAP)]
     counts["finished_loans"] = len(raw)
     logger.info("after keeping finished loans only: %d", len(raw))
-    fico = raw[["fico_range_low", "fico_range_high"]].mean(axis=1)
-    df = pd.DataFrame({
-        "loan_amount": raw["loan_amnt"],
-        "term": raw["term"].astype(str).str.extract(r"(\d+)")[0].astype(int),
-        "int_rate": raw["int_rate"].astype(str).str.rstrip("%").astype(float),
-        "grade": raw["grade"],
-        "emp_length": _parse_lc_emp_length(raw["emp_length"]),
-        "home_ownership": raw["home_ownership"],
-        "annual_income": raw["annual_inc"],
-        "purpose": raw["purpose"],
-        "dti": raw["dti"],
-        "fico": fico,
-        "open_acc": raw["open_acc"],
-        "revol_util": pd.to_numeric(
-            raw["revol_util"].astype(str).str.rstrip("%"),
-            errors="coerce",
-        ),
-        "default": raw["loan_status"].map(TARGET_MAP).astype(int),
-        "issue_d": pd.to_datetime(raw["issue_d"], format="%b-%Y", errors="coerce"),
-    })
-    df = df.dropna(subset=["fico", "dti", "annual_income", "loan_amount", "issue_d"])
+    feats = parse_lc_features(raw)
+    df = feats.drop(columns="issue_d")
+    df["default"] = raw["loan_status"].map(TARGET_MAP).astype(int)
+    df["issue_d"] = feats["issue_d"]
+    df = df.dropna(subset=KEY_FIELDS)
     counts["key_fields_present"] = len(df)
     logger.info("after dropping rows missing key fields: %d", len(df))
 

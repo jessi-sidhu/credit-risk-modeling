@@ -116,3 +116,26 @@ def test_preprocessor_respects_use_lc_grade():
     names = make_preprocessor(use_lc_grade=False).fit(X).get_feature_names_out()
     assert "int_rate" not in names
     assert not any(n.startswith("grade_") for n in names)
+
+
+# --- Phase 2: outcome columns stay out of features ---------------------------
+
+def test_outcome_columns_never_features():
+    from src.survival_data import OUTCOME_COLS
+    forbidden = set(OUTCOME_COLS) | POST_ORIGINATION | {"default"}
+    for use_lc_grade in (True, False):
+        numeric, categorical = feature_lists(use_lc_grade)
+        assert not forbidden & set(numeric + categorical)
+
+
+def test_last_pymnt_d_read_only_in_survival_data():
+    """`last_pymnt_d` is an outcome column: only src/survival_data.py may
+    reference it (for the outcome frame). `loan_status` is additionally
+    allowed in src/data.py, where it defines the Phase 1 target."""
+    from pathlib import Path
+    allowed = {"last_pymnt_d": {"survival_data.py"},
+               "loan_status": {"survival_data.py", "data.py"}}
+    src = Path(__file__).resolve().parent.parent / "src"
+    for col, ok in allowed.items():
+        users = {p.name for p in src.glob("*.py") if col in p.read_text()}
+        assert users <= ok, f"{col} referenced in {users - ok}"
