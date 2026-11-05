@@ -2,10 +2,12 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+from src.data import LC_USECOLS
 from src.features import (
     CATEGORICAL,
     NUMERIC_ALL,
     engineer_features,
+    feature_lists,
     make_preprocessor,
     split_xy,
 )
@@ -16,7 +18,7 @@ def test_engineered_columns_added():
     df = generate(n=50, seed=42)
     out = engineer_features(df)
     for col in ("loan_to_income", "installment_estimate",
-                "installment_to_income", "credit_age_proxy"):
+                "installment_to_income", "emp_x_homeowner"):
         assert col in out.columns
 
 
@@ -33,16 +35,16 @@ def test_installment_matches_amortization_formula():
     out = engineer_features(df)
     assert abs(out["installment_estimate"].iloc[0] - 332.14) < 0.5
     assert abs(out["loan_to_income"].iloc[0] - (10_000 / 60_000)) < 1e-9
-    assert out["credit_age_proxy"].iloc[0] == 5.0
+    assert out["emp_x_homeowner"].iloc[0] == 5.0
 
 
-def test_credit_age_proxy_zero_when_renting():
+def test_emp_x_homeowner_zero_when_renting():
     df = pd.DataFrame({
         "loan_amount": [10_000.0], "int_rate": [12.0], "term": [36],
         "annual_income": [60_000.0], "emp_length": [8],
         "home_ownership": ["RENT"],
     })
-    assert engineer_features(df)["credit_age_proxy"].iloc[0] == 0.0
+    assert engineer_features(df)["emp_x_homeowner"].iloc[0] == 0.0
 
 
 def test_preprocessor_fits_on_train_only():
@@ -79,3 +81,38 @@ def test_preprocessor_handles_unseen_category():
     transformed = pre.transform(new_row)
     assert transformed.shape[0] == 1
     assert not np.isnan(transformed).any()
+
+
+# Columns only known AFTER a loan is issued. Any of these in the feature
+# set is target leakage.
+POST_ORIGINATION = {
+    "total_pymnt", "total_rec_prncp", "recoveries", "collection_recovery_fee",
+    "last_pymnt_d", "last_pymnt_amnt", "last_fico_range_high",
+    "last_fico_range_low", "out_prncp",
+}
+
+
+def test_no_post_origination_columns_in_features():
+    for use_lc_grade in (True, False):
+        numeric, categorical = feature_lists(use_lc_grade)
+        assert not POST_ORIGINATION & set(numeric + categorical)
+    assert not POST_ORIGINATION & set(NUMERIC_ALL + CATEGORICAL)
+
+
+def test_no_post_origination_columns_read_from_lc():
+    assert not POST_ORIGINATION & set(LC_USECOLS)
+
+
+def test_use_lc_grade_false_drops_grade_and_rate_features():
+    numeric, categorical = feature_lists(use_lc_grade=False)
+    for col in ("grade", "int_rate", "installment_estimate", "installment_to_income"):
+        assert col not in numeric + categorical
+    assert "fico" in numeric and "purpose" in categorical
+
+
+def test_preprocessor_respects_use_lc_grade():
+    df = engineer_features(generate(n=500, seed=42))
+    X, _ = split_xy(df)
+    names = make_preprocessor(use_lc_grade=False).fit(X).get_feature_names_out()
+    assert "int_rate" not in names
+    assert not any(n.startswith("grade_") for n in names)

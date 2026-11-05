@@ -26,14 +26,34 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 NUMERIC_BASE = [
     "loan_amount", "term", "int_rate", "emp_length", "annual_income",
-    "dti", "fico", "open_acc", "revol_util", "noise_1", "noise_2",
+    "dti", "fico", "open_acc", "revol_util",
 ]
 NUMERIC_ENGINEERED = [
     "loan_to_income", "installment_estimate",
-    "installment_to_income", "credit_age_proxy",
+    "installment_to_income", "emp_x_homeowner",
 ]
 NUMERIC_ALL = NUMERIC_BASE + NUMERIC_ENGINEERED
 CATEGORICAL = ["grade", "home_ownership", "purpose"]
+
+# `grade` and `int_rate` are not raw borrower attributes: LC assigns them
+# with its own risk model at origination. Using them means our model
+# partly re-learns LC's score, so a "lift over LR" is lift on top of LC's
+# model, not from scratch. Set False to measure performance without them.
+# The installment features are computed from int_rate, so they go too.
+USE_LC_GRADE = True
+LC_GRADE_DERIVED = {"grade", "int_rate", "installment_estimate", "installment_to_income"}
+
+
+def feature_lists(use_lc_grade: bool | None = None) -> tuple[list[str], list[str]]:
+    """(numeric, categorical) model inputs. `None` reads `USE_LC_GRADE`."""
+    if use_lc_grade is None:
+        use_lc_grade = USE_LC_GRADE
+    if use_lc_grade:
+        return list(NUMERIC_ALL), list(CATEGORICAL)
+    return (
+        [c for c in NUMERIC_ALL if c not in LC_GRADE_DERIVED],
+        [c for c in CATEGORICAL if c not in LC_GRADE_DERIVED],
+    )
 
 
 def _monthly_installment(principal: np.ndarray, apr_pct: np.ndarray, term_months: np.ndarray) -> np.ndarray:
@@ -57,11 +77,15 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
         out["installment_estimate"] / (out["annual_income"] / 12.0)
     )
     owns_home = out["home_ownership"].isin(["OWN", "MORTGAGE"]).to_numpy().astype(float)
-    out["credit_age_proxy"] = out["emp_length"].to_numpy(dtype=float) * owns_home
+    out["emp_x_homeowner"] = out["emp_length"].to_numpy(dtype=float) * owns_home
     return out
 
 
-def make_preprocessor(scale_numeric: bool = False) -> ColumnTransformer:
+def make_preprocessor(
+    scale_numeric: bool = False,
+    use_lc_grade: bool | None = None,
+) -> ColumnTransformer:
+    numeric, categorical = feature_lists(use_lc_grade)
     if scale_numeric:
         num_pipe = Pipeline([
             ("impute", SimpleImputer(strategy="median")),
@@ -76,7 +100,7 @@ def make_preprocessor(scale_numeric: bool = False) -> ColumnTransformer:
     ])
 
     return ColumnTransformer(
-        [("num", num_pipe, NUMERIC_ALL), ("cat", cat_pipe, CATEGORICAL)],
+        [("num", num_pipe, numeric), ("cat", cat_pipe, categorical)],
         remainder="drop",
         verbose_feature_names_out=False,
     )
