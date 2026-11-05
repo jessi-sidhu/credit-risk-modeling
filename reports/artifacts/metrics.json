@@ -1,0 +1,153 @@
+{
+  "meta": {
+    "data": {
+      "row_counts": {
+        "rows_read": 2260668,
+        "finished_loans": 1348099,
+        "key_fields_present": 1347721,
+        "matured": 779013,
+        "term_36m": 710794
+      },
+      "snapshot_date": "2019-03-31",
+      "term_months": 36,
+      "default_rate": 0.14217902796028103,
+      "source_file": "accepted_2007_to_2018Q4.csv"
+    },
+    "quick": false,
+    "split": "out_of_time",
+    "train_until": "2013-12",
+    "test_from": "2015-01",
+    "n_train": 175422,
+    "n_val": 162570,
+    "n_test": 372802,
+    "default_rate_train": 0.1263068486278802,
+    "default_rate_val": 0.13726394783785445,
+    "default_rate_test": 0.1517910311639959
+  },
+  "models": {
+    "logistic_regression": {
+      "test": {
+        "roc_auc": 0.6802971444984782,
+        "gini": 0.36059428899695645,
+        "ks": 0.26409505645258735,
+        "pr_auc": 0.2593486899649659,
+        "brier": 0.1232811034403294,
+        "ece": 0.02869996494311061
+      },
+      "cost_threshold": {
+        "threshold_chosen_on": "validation",
+        "threshold": 0.15999999999999998,
+        "pr_auc": 0.2593486899649659,
+        "roc_auc": 0.6802971444984782,
+        "precision": 0.2671687838297779,
+        "recall": 0.4300204990457341,
+        "f1": 0.3295749277099459,
+        "tn": 249467,
+        "fp": 66747,
+        "fn": 32254,
+        "tp": 24334
+      },
+      "at_0.5": {
+        "threshold": 0.5,
+        "pr_auc": 0.2593486899649659,
+        "roc_auc": 0.6802971444984782,
+        "precision": 0.39791666666666664,
+        "recall": 0.003375273909662826,
+        "f1": 0.006693768837176701,
+        "tn": 315925,
+        "fp": 289,
+        "fn": 56397,
+        "tp": 191
+      }
+    },
+    "lightgbm_tuned": {
+      "test": {
+        "roc_auc": 0.6816588603467775,
+        "gini": 0.36331772069355495,
+        "ks": 0.2661319179349185,
+        "pr_auc": 0.2612380874107534,
+        "brier": 0.12355112299521105,
+        "ece": 0.035904637646463386
+      },
+      "cost_threshold": {
+        "threshold_chosen_on": "validation",
+        "threshold": 0.14999999999999997,
+        "pr_auc": 0.2612380874107534,
+        "roc_auc": 0.6816588603467775,
+        "precision": 0.25903826571882643,
+        "recall": 0.48102071110482786,
+        "f1": 0.3367374079137002,
+        "tn": 238353,
+        "fp": 77861,
+        "fn": 29368,
+        "tp": 27220
+      },
+      "at_0.5": {
+        "threshold": 0.5,
+        "pr_auc": 0.2612380874107534,
+        "roc_auc": 0.6816588603467775,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tn": 316214,
+        "fp": 0,
+        "fn": 56588,
+        "tp": 0
+      }
+    }
+  },
+  "bootstrap_95ci": {
+    "n_resamples": 1000,
+    "logistic_regression": {
+      "roc_auc": {
+        "estimate": 0.6802971444984782,
+        "ci_low": 0.6779592272009501,
+        "ci_high": 0.6824172324970462
+      },
+      "pr_auc": {
+        "estimate": 0.2593486899649659,
+        "ci_low": 0.256489951974757,
+        "ci_high": 0.26214516697076773
+      }
+    },
+    "lightgbm_tuned": {
+      "roc_auc": {
+        "estimate": 0.6816588603467775,
+        "ci_low": 0.6793649422955911,
+        "ci_high": 0.6838066260316796
+      },
+      "pr_auc": {
+        "estimate": 0.2612380874107534,
+        "ci_low": 0.25847111198947204,
+        "ci_high": 0.2643374266270125
+      }
+    },
+    "lightgbm_tuned - logistic_regression": {
+      "roc_auc": {
+        "estimate": 0.0013617158482992497,
+        "ci_low": 0.0006216186950042113,
+        "ci_high": 0.0021070762395095865
+      },
+      "pr_auc": {
+        "estimate": 0.0018893974457874774,
+        "ci_low": 0.0010787842235632534,
+        "ci_high": 0.002785701557646404
+      }
+    }
+  },
+  "lightgbm": {
+    "best_params": {
+      "feature_fraction": 1.0,
+      "learning_rate": 0.03738105868191797,
+      "min_child_samples": 53,
+      "num_leaves": 22,
+      "reg_lambda": 0.0013726318898045872,
+      "n_estimators": 85
+    },
+    "best_val_pr_auc": 0.23202206282175025
+  },
+  "cost_matrix": {
+    "fn_cost": 5.0,
+    "fp_cost": 1.0
+  }
+}

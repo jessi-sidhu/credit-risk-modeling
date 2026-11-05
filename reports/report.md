@@ -1,374 +1,146 @@
-# Loan Default Prediction — Report
+# Credit Risk Modeling — Report
 
-## 1. Problem framing
+All numbers in this report come from `reports/artifacts/metrics.json`, written by `make train` (`python -m src.train --save`). Derived numbers (expected cost) are computed from the confusion matrices stored there.
 
-Binary classification: given a loan application, predict the probability the borrower defaults. Banks make this decision millions of times a year, so a 1–2% lift over a baseline pays for itself. ML interest is moderate class imbalance (~18% positives), mixed feature types, and a regulator-driven need for instance-level explanations (US ECOA, Canadian credit-decision rules).
+## 1. Problem
+
+Predict, at application time, the probability that a 36-month Lending Club loan ends in default. Logistic regression is the benchmark, the way a scorecard would be built; LightGBM is the candidate main model. The question this phase answers is how much LightGBM beats LR out of time, with a confidence interval.
 
 ## 2. Data
 
-50,000 rows, 14 features + label, generated synthetically and modeled on Lending Club's public loan data. Two of the features are pure i.i.d. normals (`noise_1`, `noise_2`), included intentionally so we can verify the SHAP pipeline against ground truth.
+Source: the Kaggle Lending Club download, `data/archive/accepted_2007_to_2018q4.csv/accepted_2007_to_2018Q4.csv` (git-ignored). The rejected-applications file has a different schema and is never read. Only the 15 columns the model maps are loaded (`LC_USECOLS` in `src/data.py`).
 
-Why synthetic? Reproducibility, a known data-generating process to validate interpretability against, and no Kaggle auth required. Trade-off: real-world distributions are messier; `src/data.py::load_data(source="lendingclub")` is the single swap point if a real CSV is dropped into `data/raw/`.
+### 2.1 Target definition
 
-The DGP is deterministic per seed and uses bisection on the intercept to land the marginal default rate within 1bp of the 18% target — so the imbalance story stays honest.
+`loan_status` is mapped for finished loans only (`TARGET_MAP` in `src/data.py`):
 
-## 3. EDA findings
-
-See [`notebooks/01_eda.ipynb`](../notebooks/01_eda.ipynb).
-
-- Default rate: 18.0% — the target.
-- No missingness in the synthetic data; the `SimpleImputer` step exists for the real-data path.
-- `fico`, `dti`, and `int_rate` visibly separate the classes by density. `revol_util` shifts modestly. `noise_1`/`noise_2` densities sit on top of each other — exactly what we want.
-- `int_rate` and `grade` are correlated by construction (grade is a FICO bucket, int_rate is set from grade). Tree models tolerate; for a linear baseline this is something we'd flag.
-- Default rate is monotone in grade (A: 0.2% → G: 88%) — a strong sanity check on the pipeline end-to-end.
-
-![Class balance](figures/class_balance.png)
-![Numeric distributions by class](figures/numeric_by_class.png)
-![Default rate by category](figures/default_rate_by_category.png)
-
-## 4. Preprocessing and feature engineering
-
-Train/test split (stratified 80/20, `random_state=42`) is the FIRST step. All preprocessing — imputation, scaling, one-hot encoding — fits on the training fold only, enforced structurally by wrapping each model in a `Pipeline(pre=ColumnTransformer, clf=...)`. A test in `tests/test_features.py` checks that fitting on train alone produces a transformer that can transform test data without producing NaNs and without crashing on unseen categories.
-
-Engineered features (added before the split because they're row-wise arithmetic and cannot leak):
-
-| Feature | Why |
-|---|---|
-| `loan_to_income` = loan_amount / annual_income | Affordability ratio a loan officer would compute |
-| `installment_estimate` | Standard amortization formula on amount, rate, term |
-| `installment_to_income` = installment / (annual_income / 12) | Monthly DTI for *this* loan, not the borrower's existing burden |
-| `credit_age_proxy` = emp_length × indicator(home_ownership ∈ {OWN, MORTGAGE}) | Stability proxy when LC's listed credit-history features are absent |
-
-## 5. Metric choice
-
-Primary: **PR-AUC** (`average_precision_score`). With 18% positives, predicting "no default" everywhere gives 82% accuracy — useless. PR-AUC is threshold-independent and focuses on the rare positive class.
-
-Secondary: **ROC-AUC** for comparison with literature.
-
-Operating point: precision, recall, F1 at a chosen threshold. The threshold is picked by minimizing **expected cost** with FN:FP = 5:1 (a missed default ≈ loan principal lost; a rejected good loan ≈ foregone interest margin). The 5:1 ratio is exposed as a parameter (`CostMatrix(fn_cost, fp_cost)`) so the §13 sensitivity analysis is one function call.
-
-## 6, 7, 8. Models, tuning, threshold
-
-Three models, escalating in complexity. The boosting model is the only one tuned, via `RandomizedSearchCV` (5-fold stratified, 30 iters, scored on PR-AUC, executed against the train set only).
-
-| Model | PR-AUC | ROC-AUC | F1 @ 0.5 | F1 @ cost-opt | Threshold |
-|---|---:|---:|---:|---:|---:|
-| Logistic regression (balanced) | 0.7451 | 0.9235 | 0.6439 | 0.6586 | 0.53 |
-| Random forest (300 trees) | 0.7206 | 0.9155 | 0.6405 | 0.6126 | 0.16 |
-| LightGBM (tuned) | 0.7404 | 0.9215 | 0.6535 | 0.6234 | 0.14 |
-
-Tuned LightGBM hyperparameters: `num_leaves=18, learning_rate=0.017, min_child_samples=48, reg_lambda=5.87, n_estimators=473, feature_fraction=1.0`.
-
-![Precision–recall curves](figures/pr_curves.png)
-
-**Threshold selection.** Sweeping thresholds on the held-out test set:
-
-- Cost at default 0.5 threshold: **4,090**
-- Cost at optimal (≈ 0.14) threshold: **2,705**
-- Reduction: **33.9%**
-
-That's the most operationally valuable result in this report. F1 alone would have understated it.
-
-![Cost vs threshold](figures/threshold_sweep.png)
-
-**Honest note.** The linear baseline is essentially tied with tuned LightGBM on this synthetic data. That's expected — the DGP is largely additive in the true features. We'd still ship the boosting model in production because (a) it's better-calibrated for the cost-sensitive operating point, (b) real Lending Club data has interactions and time effects the linear model can't represent, and (c) the marginal training cost is irrelevant.
-
-## 9. Interpretability (SHAP)
-
-See [`notebooks/03_interpretation.ipynb`](../notebooks/03_interpretation.ipynb).
-
-**Global importance** (mean |SHAP| on a 1,000-row test sample):
-
-| Feature | mean &#124;SHAP&#124; |
+| `loan_status` | default |
 |---|---:|
-| fico | 1.585 |
-| dti | 0.511 |
-| int_rate | 0.290 |
-| revol_util | 0.211 |
-| loan_to_income | 0.067 |
-| term | 0.047 |
-| installment_to_income | 0.030 |
-| ... | ... |
-| noise_1 | 0.018 |
-| noise_2 | 0.012 |
+| Fully Paid | 0 |
+| Does not meet the credit policy. Status:Fully Paid | 0 |
+| Charged Off | 1 |
+| Default | 1 |
+| Does not meet the credit policy. Status:Charged Off | 1 |
+| Current, Late (16-30 days), Late (31-120 days), In Grace Period | dropped |
 
-The two noise features have roughly **1% of fico's contribution**, and rank below every true continuous-signal feature. A small residual SHAP value on pure noise is normal in a tuned tree ensemble — it just means the model picked up a few spurious splits, not that the pipeline is broken. If `noise_*` had been *high* in the ranking, that would have been a red flag for label leakage or a fitting bug.
+Late loans are dropped rather than counted as defaults: they don't have a final outcome yet, and some of them cure.
 
-![SHAP bar](figures/shap_bar.png)
-![SHAP beeswarm](figures/shap_beeswarm.png)
+### 2.2 Matured cohorts and loan term
 
-Beeswarm signs match domain intuition: high FICO pushes predictions toward not-default; high DTI and high int_rate push toward default. Sign-checks like this are cheap insurance against label/feature errors.
+The file is a snapshot taken around 2019-03-31 (`SNAPSHOT_DATE`). For a cohort issued in 2017, the loans that have *finished* by the snapshot are mostly early payoffs and fast charge-offs; the ones still running are dropped as `Current`. Keeping those cohorts would bias the default rate. A loan is therefore kept only if `issue_d + term ≤ SNAPSHOT_DATE`.
 
-**Local explanations.** Three test loans were chosen — a clear default, a clear paid loan, and a borderline case — and rendered as SHAP waterfalls. These are the regulator-facing artifact: each prediction can be explained one feature at a time.
+That filter keeps 36-month loans issued up to 2016-03 but 60-month loans only up to 2014-03. An out-of-time test set from 2015 onward would contain no 60-month loans, while training would mix them in, and 60-month loans default much more often than 36-month loans. The model is therefore restricted to 36-month loans (`TERM_MONTHS = 36`).
 
-![Clear default waterfall](figures/shap_waterfall_clear_default.png)
-![Clear paid waterfall](figures/shap_waterfall_clear_paid.png)
-![Borderline waterfall](figures/shap_waterfall_borderline.png)
+### 2.3 Row counts
 
-## 10. Error analysis
+| Step | Rows |
+|---|---:|
+| Rows read (blank footer lines removed) | 2,260,668 |
+| Finished loans (status in `TARGET_MAP`) | 1,348,099 |
+| FICO, DTI, income, amount and issue date present | 1,347,721 |
+| Matured by 2019-03-31 | 779,013 |
+| 36-month loans | 710,794 |
 
-Slicing test errors by `purpose` reveals where the model misses defaults disproportionately. False-negative rates (FN / actual positives) and the lift over the overall FNR:
+Final default rate: 14.22%.
 
-| purpose | n | FN | FNR | FNR lift |
-|---|---:|---:|---:|---:|
-| home_improvement | 458 | 12 | 0.150 | 1.42 |
-| small_business | 428 | 10 | 0.143 | 1.35 |
-| credit_card | 2,047 | 44 | 0.119 | 1.12 |
-| debt_consolidation | 5,486 | 100 | 0.104 | 0.99 |
-| car | 381 | 4 | 0.049 | 0.47 |
+### 2.4 Out-of-time split
 
-`home_improvement` and `small_business` have the highest missed-default rates — this matches conventional credit wisdom (these purposes carry idiosyncratic risk that headline credit features don't capture well). In production we'd consider a per-segment threshold, additional features for those segments, or both.
+| Split | Issue dates | Rows | Default rate | Used for |
+|---|---|---:|---:|---|
+| Train | 2007-06 – 2013-12 | 175,422 | 12.63% | fitting |
+| Validation | 2014-01 – 2014-12 | 162,570 | 13.73% | early stopping, model selection, threshold |
+| Test | 2015-01 – 2016-03 | 372,802 | 15.18% | final report only |
 
-![FNR by purpose](figures/fnr_by_purpose.png)
+The test window is larger than the training window because Lending Club's volume grew quickly. The default rate rises across the three windows; section 5 shows the effect.
 
-## 11. Limitations (honest)
+## 3. Features
 
-- **Synthetic data.** Real Lending Club has messier missingness, label-leakage risk from `loan_status` derivative columns, and time effects (interest rates and macro conditions shift). Our DGP is additive in the true features; real data is not.
-- **Temporal validation included** — see [§13e](#13e-temporal-validation-done) below.
-- **Fairness audit included.** A `protected_group` attribute (correlated with income, never given to the model) lets us measure approval-rate, FNR, and FPR parity. See [§13d](#13d-fairness-audit-done) below for results. Note that real-world protected attributes (race, age) are forbidden as features under US ECOA but can leak via proxies — the audit framework here ports directly.
-- **Single point-in-time prediction.** Doesn't model survival/hazard — *when* during the loan does default happen?
-- **Cost matrix is a rough heuristic.** 5:1 is a defensible starting point, not a measured number from a specific lender's P&L.
+Every feature must be known when the credit decision is made.
 
-## 12. Future work
+| Feature | Source | Why it's allowed |
+|---|---|---|
+| `fico` | mean of `fico_range_low` / `fico_range_high` | Bureau score pulled at application. (`last_fico_range_*` is post-origination and is not read.) |
+| `dti` | `dti` | Debt-to-income from the application |
+| `annual_income` | `annual_inc` | Stated on the application |
+| `emp_length` | `emp_length` | Stated on the application; parsed to 0–10 years |
+| `home_ownership` | `home_ownership` | Stated on the application |
+| `open_acc` | `open_acc` | Bureau data at application |
+| `revol_util` | `revol_util` | Bureau data at application |
+| `loan_amount` | `loan_amnt` | Requested amount |
+| `term` | `term` | Requested term (always 36 after the term filter, so it carries no signal here) |
+| `purpose` | `purpose` | Stated on the application |
+| `grade` | `grade` | Assigned by LC at origination (see below) |
+| `int_rate` | `int_rate` | Set by LC from the grade at origination (see below) |
+| `loan_to_income` | `loan_amount / annual_income` | Arithmetic on application fields |
+| `installment_estimate` | amortization of amount, rate, term | Arithmetic on application fields |
+| `installment_to_income` | installment / monthly income | Arithmetic on application fields |
+| `emp_x_homeowner` | `emp_length` × owns or mortgages home | Arithmetic on application fields (previously misnamed `credit_age_proxy`) |
 
-- **Temporal validation** — done; see below.
-- **Drift monitoring** — PSI on inputs and rolling-window performance with a label-resolution lag both implemented; see [§13c](#13c-drift-monitoring-done).
-- **Calibration audit** — done; see below.
-- **Cost-matrix sensitivity** — done; see below.
-- **Segment-specific thresholds** — given the FNR concentration in `home_improvement` / `small_business`, a per-purpose threshold likely beats a single global one.
+**LC grade and rate.** `grade` and `int_rate` are outputs of Lending Club's own risk model. They exist at decision time, so they're not leakage, but a model using them partly re-learns LC's score. `USE_LC_GRADE` in `src/features.py` (default `True`) controls them; setting it to `False` also drops the two installment features, because they're computed from `int_rate`. The results below use `True`.
 
-## 13a. Cost-matrix sensitivity (done)
+**Leakage guard.** `tests/test_features.py` fails if any of `total_pymnt`, `total_rec_prncp`, `recoveries`, `collection_recovery_fee`, `last_pymnt_d`, `last_pymnt_amnt`, `last_fico_range_high`, `last_fico_range_low`, `out_prncp` is a model feature, or is in the list of columns read from the CSV.
 
-The 5:1 ratio is a heuristic. Sweeping FN:FP from 2:1 to 10:1 on the held-out test set:
+**Preprocessing.** Median imputation, standard scaling (LR only) and one-hot encoding (unseen categories ignored) live inside each model's sklearn `Pipeline` and are fit on the training split only.
 
-| FN:FP | Optimal threshold | Cost @ opt | Cost @ 0.5 | Reduction | Precision | Recall | F1 |
-|---:|---:|---:|---:|---:|---:|---:|---:|
-| 2 | 0.29 | 1,753 | 1,864 | 6.0% | 0.607 | 0.759 | 0.674 |
-| 3 | 0.22 | 2,167 | 2,606 | 16.8% | 0.551 | 0.822 | 0.660 |
-| 5 | 0.14 | 2,705 | 4,090 | **33.9%** | 0.478 | 0.894 | 0.623 |
-| 7 | 0.12 | 3,054 | 5,574 | 45.2% | 0.456 | 0.913 | 0.608 |
-| 10 | 0.07 | 3,490 | 7,800 | 55.3% | 0.390 | 0.956 | 0.554 |
+## 4. Models
 
-The qualitative behavior is what we'd want to defend in an interview: as the FN penalty grows, threshold drops monotonically, recall grows, precision falls, and the gain from threshold tuning over the naive 0.5 grows. The operating point is not fragile to the exact ratio within a reasonable range.
+**Logistic regression** (`src/models.py`): L2, `max_iter=2000`, no class reweighting. An earlier version used `class_weight="balanced"`, which inflates predicted probabilities and would make LR look badly calibrated for reasons unrelated to ranking. Class imbalance is handled by the cost-optimal threshold instead.
 
-![Cost sensitivity](figures/cost_sensitivity.png)
+**LightGBM** (`src/train.py::tune_lightgbm_early_stopping`): 30 candidates sampled over `num_leaves`, `learning_rate`, `min_child_samples`, `feature_fraction` and `reg_lambda`. Each candidate is fit on train with up to 2,000 trees and early stopping (50 rounds) on validation PR-AUC, and the candidate with the best validation PR-AUC is kept.
 
-## 13b. Calibration audit (done)
+Selected: `num_leaves=22`, `learning_rate=0.0374`, `min_child_samples=53`, `feature_fraction=1.0`, `reg_lambda=0.0014`, 85 trees (validation PR-AUC 0.2320). Early stopping at 85 trees with a moderate learning rate means the validation set stopped rewarding extra complexity quickly.
 
-See [`notebooks/04_calibration.ipynb`](../notebooks/04_calibration.ipynb).
+## 5. Results (out-of-time test set)
 
-| Method | Brier | ECE |
-|---|---:|---:|
-| Raw LightGBM | 0.0832 | 0.0095 |
-| Platt scaling | 0.0834 | 0.0124 |
-| Isotonic regression | 0.0831 | 0.0107 |
+### 5.1 Discrimination and calibration
 
-**Honest finding**: the tuned LightGBM is already well-calibrated. Brier of 0.083 against a prevalence of ~0.18 (the all-base-rate Brier ceiling for this prevalence is `0.18 × 0.82 ≈ 0.148`), and ECE under 1%. Both Platt and isotonic recalibration land within noise of the raw model on the held-out eval half — neither is a meaningful improvement. We'd still ship the recalibration *machinery* for production because real Lending Club data, after a regime change, often shifts probabilities even when ranking quality holds.
+95% CIs are percentile intervals from 1,000 bootstrap resamples of the test set. The difference is computed on the same resamples for both models (paired).
 
-**Cross-validated calibration.** `src/calibration.py::cv_calibrated_probs` is the methodologically cleaner way to fit a calibrator: it returns one probability per train row from a fold where that row was held out, so the calibration data is unimpeachably out-of-sample. Apples-to-apples on the same eval half:
+| Model | ROC-AUC [95% CI] | Gini | KS | PR-AUC [95% CI] | Brier | ECE |
+|---|---|---:|---:|---|---:|---:|
+| Logistic regression | 0.6803 [0.6780, 0.6824] | 0.3606 | 0.2641 | 0.2593 [0.2565, 0.2621] | 0.1233 | 0.0287 |
+| LightGBM | 0.6817 [0.6794, 0.6838] | 0.3633 | 0.2661 | 0.2612 [0.2585, 0.2643] | 0.1236 | 0.0359 |
 
-| Method | Brier | ECE |
-|---|---:|---:|
-| Raw | 0.0832 | 0.0095 |
-| Platt (test-half) | 0.0834 | 0.0124 |
-| Isotonic (test-half) | 0.0831 | 0.0107 |
-| Platt (CV-on-train) | 0.0833 | 0.0126 |
-| Isotonic (CV-on-train) | 0.0847 | 0.0206 |
+| LightGBM − LR | Estimate | 95% CI |
+|---|---:|---|
+| ROC-AUC | +0.0014 | [+0.0006, +0.0021] |
+| PR-AUC | +0.0019 | [+0.0011, +0.0028] |
 
-All five are within noise of each other on Brier, confirming the model's intrinsic calibration. The CV path is the one we'd use in production where the held-out-half-of-test trick wouldn't be available.
+**How much does LightGBM beat LR?** By about 0.14 ROC-AUC points and 0.19 PR-AUC points. With 372,802 test loans the CIs are tight enough that the gain is clearly not zero, but it's far too small to matter in practice. On Brier the two are tied (0.1233 vs 0.1236), and LightGBM's probabilities are slightly worse calibrated (ECE 0.0359 vs 0.0287). On these application-time features, most of the signal is linear, and much of it is already summarised in LC's own `grade` / `int_rate`.
+
+PR-AUC should be read against the test default rate of 0.1518, which is what a random ranking would score.
 
 ![Reliability diagram](figures/reliability.png)
 
-## 13c. Drift monitoring (done)
+Both curves sit above the diagonal: in every probability bin the observed default rate on 2015–16 loans is higher than predicted. That's consistent with the default rate rising from 12.6% (train) to 15.2% (test). Ranking holds up, but the probability *level* shifts over time, so the probabilities would need recalibrating on recent cohorts before being used directly (for pricing or expected loss).
 
-See [`notebooks/05_drift.ipynb`](../notebooks/05_drift.ipynb).
+### 5.2 Cost-aware threshold
 
-Population Stability Index per feature with the conventional credit-risk thresholds (`< 0.10` stable, `0.10–0.25` moderate, `> 0.25` significant). The notebook validates three things:
+Assumed costs: a missed default (FN) costs 5, a wrongly rejected good loan (FP) costs 1 (`CostMatrix`). Expected cost = 5·FN + 1·FP on the test set. The threshold that minimises expected cost is picked on the **validation** predictions and then applied to the test set unchanged.
 
-1. **No false alarms.** Baseline (train) vs current (held-out test) PSI is < 0.01 on every feature — the same DGP, no shift.
-2. **Detects expected drift.** Three simulated scenarios — a +4pp rate shock, a -25 FICO shift, and a one-third re-routing of loan purpose to `small_business` — each light up the expected features (and their dependents: rate-shock also moves `installment_estimate`).
-3. **Surfacable status labels.** `psi_report` returns one row per feature with a status, ready to feed a dashboard or pager rule.
+| Model | Threshold | Flagged as default | Precision | Recall | FN | FP | Expected cost |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Logistic regression | 0.16 | 91,081 | 0.267 | 0.430 | 32,254 | 66,747 | 228,017 |
+| LightGBM | 0.15 | 105,081 | 0.259 | 0.481 | 29,368 | 77,861 | 224,701 |
 
-![PSI scenarios](figures/psi_scenarios.png)
+At the 0.5 threshold LR flags 480 loans and LightGBM flags none, so the expected cost there (282,274 and 282,940) is essentially the cost of having no model. Against that baseline the cost-optimal threshold cuts expected cost by 19.2% (LR) and 20.6% (LightGBM). The difference *between* the two models at their operating points is 3,316 cost units (1.5%), in line with the small AUC gap.
 
-**Label-delay performance monitor.** PSI gives early warning on inputs (within hours of seeing new applications). The complementary check is *output*-side drift: PR-AUC and Brier on freshly-resolved labels. `src/monitor.py::rolling_performance` walks rolling cohort windows with a configurable `lag_months` between origination and outcome resolution. Combined, the two monitors cover both failure modes — input shifts you can detect today, performance erosion you can only confirm months later.
+## 6. Known limitations
 
-![Label-delay monitor](figures/monitor_label_delay.png)
+- **Binary target ignores timing.** A charge-off in month 3 and one in month 35 get the same label, and loan value depends heavily on when default happens. Survival / time-to-default modeling is the next phase.
+- **Accepted loans only, no reject inference.** The model is trained and evaluated on applicants LC approved. Its performance on the full applicant population is unknown.
+- **LC grade used as a feature.** `grade` and `int_rate` encode LC's own risk model, so part of the measured performance belongs to LC. A run with `USE_LC_GRADE = False` would show how much the borrower fields carry on their own; it isn't reported here.
+- **36-month loans only.** 60-month loans are excluded because the matured out-of-time test set contains none.
+- **Default rate shifts over time.** Test cohorts default more often than training cohorts, and both models under-predict on the test set.
+- **The cost matrix is a heuristic.** 5:1 is a rule of thumb, not measured loss-given-default and margin.
+- **Notebooks not re-run.** `notebooks/01`–`05` (EDA, modeling, SHAP, calibration, drift) and their figures in `reports/figures/` still reflect the earlier synthetic dataset, and are not part of this report. Re-running them on the real data is pending.
 
-## 13d. Fairness audit (done)
+## 7. Reproduce
 
-See [`notebooks/06_fairness.ipynb`](../notebooks/06_fairness.ipynb).
+```bash
+make install
+make test     # 79 tests on synthetic fixtures
+make train    # needs data/archive/; writes metrics.json and figures/reliability.png
+```
 
-The synthetic data has a `protected_group ∈ {A, B, C}` attribute correlated with income (added at the end of `synth.generate` so all other columns are bit-identical and the saved model still applies). The model never sees `protected_group` — but it does use `annual_income` and `fico`, the canonical proxy variables.
-
-At the cost-optimal threshold of 0.14:
-
-| Group | n | True default rate | Approval rate | FNR | FPR | PPV |
-|---|---:|---:|---:|---:|---:|---:|
-| A (highest income) | 3,300 | 16.2% | 68.8% | 12.1% | 20.2% | 45.8% |
-| B | 3,353 | 18.7% | 66.8% | 10.7% | 20.3% | 50.3% |
-| C (lowest income) | 3,347 | 19.0% | 63.5% | 9.1% | 23.7% | 47.3% |
-
-Parity ratios vs Group A:
-
-| Group | Approval | TPR | FPR | FNR | PPV |
-|---|---:|---:|---:|---:|---:|
-| A | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
-| B | 0.970 | 1.017 | 1.007 | 0.880 | 1.099 |
-| C | 0.923 | 1.034 | 1.175 | 0.752 | 1.034 |
-
-**Four-fifths rule**: passes at **0.92** (Group C approval rate is 92% of Group A's, well above the 0.80 EEOC threshold). Disparate impact is real but mild.
-
-![Fairness metrics](figures/fairness_metrics.png)
-
-**The honest takeaway** is the inherent trade-off: groups have different *true* default rates (16.2% vs 19.0%), so the three classical fairness criteria — demographic parity, equal opportunity (TPR parity), predictive parity (PPV parity) — provably cannot all hold simultaneously. Here the model gets approximate equal opportunity (TPR parity within 3.4%) and approximate predictive parity (PPV within 10%) at the cost of unequal approval rates and unequal FPRs. Whether that's the right trade-off is a policy decision, not a modeling one. We'd surface this audit at every deployment review.
-
-Per-group cost-optimal thresholds, for comparison only — **not** something we'd ship, because making the threshold a function of group violates ECOA's prohibition on using a protected attribute in the decision rule:
-
-| Group | Cost-optimal threshold |
-|---|---:|
-| A | 0.16 |
-| B | 0.13 |
-| C | 0.13 |
-
-The thresholds are close enough that the global 0.14 is a reasonable compromise on this dataset.
-
-## 13e. Temporal validation (done)
-
-See [`notebooks/07_temporal.ipynb`](../notebooks/07_temporal.ipynb).
-
-The synthetic generator gained an `issue_d` column spanning 60 cohort months (2014-01 → 2018-12) and an opt-in `temporal_trend` flag that adds two effects to the default-rate logit:
-
-1. A macro shift: `+ 0.4 * (cohort_year - 2016) / 2`. Default prevalence drifts year-over-year while the marginal rate stays at 18% via the existing intercept calibrator.
-2. A 2018 regime change: half the historical `int_rate → default` signal is removed for 2018 cohorts, simulating a market shift where rates no longer risk-stratify as cleanly.
-
-Same model architecture and hyperparameters fitted under two methodologies — random 80/20 split (the methodology in §6–8 of this report) vs temporal split (train ≤ 2017-06, test ≥ 2018-01):
-
-| Model | Random PR-AUC | Temporal PR-AUC | Δ | Random ROC-AUC | Temporal ROC-AUC | Δ |
-|---|---:|---:|---:|---:|---:|---:|
-| Logistic regression | 0.726 | 0.663 | **−0.063** | 0.914 | 0.888 | −0.026 |
-| Random forest | 0.703 | 0.634 | **−0.069** | 0.904 | 0.877 | −0.027 |
-| LightGBM (tuned) | 0.723 | 0.654 | **−0.069** | 0.913 | 0.885 | −0.028 |
-
-**Random split overstates production performance by 6–7 PR-AUC points and 2–3 ROC-AUC points.** The headline number that goes to the bank is the OOT one — anything else assumes a stationary world that doesn't exist.
-
-![Temporal degradation](figures/temporal_degradation.png)
-![Per-cohort PR-AUC in 2018](figures/temporal_per_cohort.png)
-
-**What this still doesn't capture.** Feature-distribution drift between origination and outcome resolution. Real loans default 6–18 months after origination; by the time you have labels, the input distribution has already moved on. The PSI monitor (§13c) catches input-side drift; a delayed-outcome monitor catches output-side performance erosion. Both are needed in production.
-
-**Reproduce** with `make train-temporal` (deterministic via `RANDOM_STATE = 42`).
-
-## 13f. Tabular deep learning bake-off (done)
-
-See [`notebooks/08_tabular_dl.ipynb`](../notebooks/08_tabular_dl.ipynb).
-
-Two PyTorch models implemented from scratch and benchmarked against the existing tuned LightGBM on the same 80/20 train/test split:
-
-1. **MLP** (`src/tabular_dl.py::MLP`): per-categorical embedding (size 16) + standardized numerics, concatenated, fed into a 3-layer MLP (128/64/32 with dropout 0.2).
-2. **FT-Transformer** (`src/tabular_dl.py::FTTransformer`, Gorishniy et al. 2021): each numerical feature gets a per-feature linear tokenizer; each categorical column gets its own embedding table. All tokens are stacked, a learned [CLS] is prepended, and 3 pre-norm Transformer blocks (8 heads, d_token=64, FFN multiplier 2) attend across them. Final [CLS] embedding feeds a small classification head.
-
-Both trained with AdamW (`lr=1e-3, weight_decay=1e-4`), cosine LR schedule, BCE with `pos_weight = (1-y).sum() / y.sum()` for the 18% imbalance, and early stopping on validation PR-AUC. Apple Silicon MPS used when available.
-
-Results on the same held-out 10k test set:
-
-| Model | PR-AUC | ROC-AUC | Train time |
-|---|---:|---:|---:|
-| Logistic regression (balanced) | 0.745 | 0.924 | <1s |
-| Random forest (300 trees) | 0.721 | 0.916 | 4s |
-| LightGBM (tuned, 30 RandomizedSearchCV iters) | 0.740 | 0.922 | ~7 min |
-| MLP (PyTorch) | 0.739 | 0.921 | 16s on MPS |
-| FT-Transformer (PyTorch) | 0.737 | 0.921 | 102s on MPS |
-
-![PR curves: GBM vs PyTorch DL](figures/pr_curves_dl.png)
-
-**The honest finding:** all five models are within ~0.4 PR-AUC points of each other. Tabular deep learning does not beat gradient boosting on this dataset, which mirrors the published Grinsztajn et al. 2022 result. DL pulls ahead on tabular data when the feature count is large, the categoricals are very high-cardinality, or the dataset is much bigger.
-
-The MLP matches the Transformer at 6x lower train cost. On this DGP the additive structure means an MLP captures most of what attention would have given.
-
-### DL-side audits
-
-The same audit dimensions from §9-13 carry over to the DL model. Calibration, permutation importance, and fairness re-run for the FT-Transformer in notebook 08:
-
-| Method | Brier | ECE |
-|---|---:|---:|
-| LightGBM | 0.081 | 0.008 |
-| MLP (PyTorch) | 0.125 | 0.164 |
-| FT-Transformer (PyTorch) | 0.112 | 0.122 |
-
-The PyTorch models trained with `pos_weight` produce inflated probabilities. This is a known consequence of class-weighted BCE: ranking is preserved, but the probability surface is pushed up. To use the DL models in the cost-sensitive operating-point selector from §8, run them through the existing Platt or isotonic recalibrator on a validation fold first.
-
-**Permutation importance** on the FT-Transformer ranks `fico`, `dti`, `grade`, `int_rate`, `loan_to_income`, and `installment_to_income` at the top, matching what LightGBM SHAP found in §9. Both pure-noise features sit at the bottom with PR-AUC drops below 0.002, the sanity check the synthetic DGP was built to enable.
-
-![FT-Transformer permutation importance](figures/dl_permutation_importance.png)
-
-**Fairness** on the FT-Transformer at its cost-optimal threshold (post-recalibration would shift this; reported here at the raw threshold for direct comparison): four-fifths-rule passes at ratio 0.918 (LightGBM was 0.923). TPR parity within 3% across groups, FPR parity within 30%. Proxy discrimination through income / FICO is a property of the data, not the architecture.
-
-**Reproduce** the DL bake-off with `make train-dl` (deterministic via `RANDOM_STATE = 42` threaded through PyTorch generators).
-
-## 13g. Conformal prediction (done)
-
-See [`notebooks/09_conformal.ipynb`](../notebooks/09_conformal.ipynb).
-
-Every model in this project produces a point estimate of `P(default)`. None of them tells you *how confident* that estimate is per loan. Split conformal prediction (Vovk et al. 2005; Angelopoulos & Bates 2023) wraps any black-box model in a finite-sample, distribution-free coverage guarantee: with probability at least `1 - alpha`, the prediction set contains the true label.
-
-For credit risk this turns the model output into one of three actions:
-
-| Set | Action |
-|---|---|
-| `{paid}` | confident the loan repays; auto-approve |
-| `{default}` | confident the loan defaults; auto-reject |
-| `{paid, default}` | not confident enough; route to a manual underwriter |
-
-Empirical coverage on the LightGBM probabilities, calibrated on a held-out half of test and evaluated on the other half:
-
-| alpha | Target coverage | Empirical coverage | Avg set size | % singleton | % uncertain |
-|---:|---:|---:|---:|---:|---:|
-| 0.05 | 0.95 | ~0.95 | ~1.4 | ~60% | ~40% |
-| 0.10 | 0.90 | ~0.90 | ~1.2 | ~80% | ~20% |
-| 0.20 | 0.80 | ~0.80 | ~1.0 | ~95% | ~5% |
-
-Coverage tracks the target within ~1 point at every alpha, as the theory promises. The fraction of `{paid, default}` sets is the operationally meaningful number: that's the rate at which the model would honestly defer to a human reviewer.
-
-![Conformal set sizes](figures/conformal_set_sizes.png)
-
-**Conditional coverage by group** is *not* a guarantee of conformal prediction; the marginal `1 - alpha` is. If empirical coverage drops in some protected group, the model is concentrating its uncertainty there. That's a fairness signal that point-prediction parity (§13d) cannot detect.
-
-![Conformal coverage by group](figures/conformal_by_group.png)
-
-This pairs with the cost-aware threshold (§8): the threshold tells you what to do for confident predictions; the conformal set tells you which predictions to trust.
-
-## 13h. Stacking ensemble (done)
-
-See [`notebooks/10_stacking.ipynb`](../notebooks/10_stacking.ipynb).
-
-A logistic-regression meta-learner over the probability outputs of all five base models. The test set is split in half: the first half is the meta-learner's training data (each base model's predictions on those rows are honest out-of-sample because the bases never saw test); the second half is the stacked predictor's evaluation set.
-
-Pairwise base-model probability correlations sit at 0.85-0.95: high but not 1.0, which is why a meta-learner can extract any signal at all. Fitted meta-learner weights:
-
-| Base | Weight |
-|---|---:|
-| logistic_regression | +3.22 |
-| mlp | +2.06 |
-| random_forest | +1.03 |
-| lightgbm | +0.91 |
-| ftt | -0.72 |
-
-The negative weight on FT-Transformer means the meta-learner uses it as a contrast / correction signal rather than as a primary predictor.
-
-Headline numbers on the eval half:
-
-| Model | PR-AUC | ROC-AUC | Brier |
-|---|---:|---:|---:|
-| logistic_regression | 0.747 | 0.922 | 0.116 |
-| lightgbm | 0.741 | 0.920 | 0.083 |
-| **stack** | **0.741** | **0.921** | **0.084** |
-| mlp | 0.740 | 0.919 | 0.124 |
-| ftt | 0.739 | 0.920 | 0.111 |
-| random_forest | 0.718 | 0.913 | 0.086 |
-
-The stack matches LightGBM and lands within 0.6 PR-AUC points of the best base. **The honest finding**: stacking buys little here because the base models are highly correlated and LR alone is at the additive-DGP ceiling. With more diverse bases (a kNN, a calibrated SVM, a sequence model on the temporal cohorts) the gain is usually larger.
-
-![Stack vs base models](figures/stacking_pr_curves.png)
-
-The cost-aware threshold flow from §8 carries over: stacked-probability sweep produces a cost-optimal threshold of 0.13, with a 33% expected-loss reduction over the naive 0.5 threshold. That mirrors the LightGBM and FT-Transformer results, confirming the cost-asymmetry signal is robust to model choice.
+`RANDOM_STATE = 42` fixes the search, the model seeds and the bootstrap.

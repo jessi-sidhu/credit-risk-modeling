@@ -42,6 +42,6 @@ def test_temporal_split_raises_when_column_missing():
 def test_load_data_then_temporal_split_consistent():
     """Round-trip via load_data (which round-trips through CSV) so we
     catch any dtype regression on issue_d after CSV read."""
-    df = load_data(regenerate=True, n=2_000)
+    df = load_data(source="synthetic", regenerate=True, n=2_000)
     tr, _, te = temporal_split(df, train_until="2017-06", test_from="2018-01")
     assert len(tr) > 0 and len(te) > 0

@@ -109,3 +109,13 @@ def test_ece_zero_for_well_calibrated_constant():
     y = rng.binomial(1, 0.18, size=n)
     p = np.full(n, y.mean())
     assert expected_calibration_error(y, p, n_bins=5) < 1e-9
+
+
+def test_reliability_table_columns_not_swapped():
+    """Probabilities that are 2x too high must show mean_predicted above
+    fraction_positive in every bin."""
+    rng = np.random.default_rng(0)
+    true_p = rng.uniform(0.02, 0.3, size=20_000)
+    y = rng.binomial(1, true_p)
+    t = reliability_table(y, 2 * true_p, n_bins=10)
+    assert (t["mean_predicted"] > t["fraction_positive"]).all()

@@ -139,8 +139,8 @@ def generate(n: int = 50_000, seed: int = 42, temporal_trend: bool = False) -> p
     # the same seed, every other column is bit-identical to a build
     # without this attribute.  The group is correlated with income (a
     # realistic proxy effect) but does NOT influence `default` directly,
-    # so any disparity surfaced in 06_fairness.ipynb comes from the
-    # model relying on income/FICO — not from labels being unfair.
+    # so any group disparity a model shows comes from it
+    # relying on income/FICO — not from labels being unfair.
     log_inc = np.log(annual_income)
     z_inc = (log_inc - log_inc.mean()) / log_inc.std()
     group_score = z_inc + rng.normal(0, 0.6, size=n)
