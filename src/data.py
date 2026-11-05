@@ -1,11 +1,18 @@
 """Data loading layer.
 
-`load_data` is the single swap point between synthetic and real Lending
-Club data. Both sources return a DataFrame with the same columns:
+`load_data` returns real Lending Club data by default. The synthetic
+source (`src/synth.py`) is kept only as a small fixture generator for
+tests and must not be used by any training path.
+
+The LC loader returns:
 
     loan_amount, term, int_rate, grade, emp_length, home_ownership,
     annual_income, purpose, dti, fico, open_acc, revol_util,
-    noise_1, noise_2, default, protected_group, issue_d
+    default, issue_d
+
+Raw file: the Kaggle download in `data/archive/`. Only the ACCEPTED-loans
+file is read (see `find_accepted_file`); the rejected-loans file has a
+different schema and is never loaded.
 
 Real LC mapping (see `_load_lendingclub`):
     loan_amnt        -> loan_amount
@@ -22,8 +29,6 @@ Real LC mapping (see `_load_lendingclub`):
     revol_util       -> revol_util (parsed: "45.2%" -> 45.2)
     issue_d          -> issue_d (parsed: "Dec-2014" -> 2014-12-01)
     loan_status      -> default (Charged Off / Default / Late > 30 -> 1)
-    (none)           -> noise_1, noise_2 (zero-filled; for parity with synth)
-    (none)           -> protected_group ("unknown"; LC has no such field)
 """
 from __future__ import annotations
 
@@ -35,9 +40,18 @@ from .synth import generate
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SYNTH_PATH = _PROJECT_ROOT / "data" / "synthetic" / "loans.csv"
-RAW_DIR = _PROJECT_ROOT / "data" / "raw"
+RAW_DIR = _PROJECT_ROOT / "data" / "archive"
 
 DEFAULT_STATUSES = {"Charged Off", "Default", "Late (31-120 days)"}
+
+# Only the raw LC columns we map, plus loan_status. The full accepted
+# file has ~150 columns and is ~1.6 GB; reading a subset keeps memory down.
+LC_USECOLS = [
+    "loan_amnt", "term", "int_rate", "grade", "emp_length",
+    "home_ownership", "annual_inc", "purpose", "dti",
+    "fico_range_low", "fico_range_high", "open_acc", "revol_util",
+    "issue_d", "loan_status",
+]
 
 
 def temporal_split(
@@ -69,7 +83,7 @@ DEFAULT_N = 50_000
 
 
 def load_data(
-    source: str = "synthetic",
+    source: str = "lendingclub",
     n: int = DEFAULT_N,
     seed: int = 42,
     regenerate: bool = False,
@@ -100,17 +114,33 @@ def _parse_lc_emp_length(series: pd.Series) -> pd.Series:
     return digits.clip(0, 10)
 
 
-def _load_lendingclub(raw_dir: Path = RAW_DIR) -> pd.DataFrame:
-    candidates = sorted(raw_dir.glob("*.csv"))
-    if not candidates:
-        raise FileNotFoundError(
-            f"No CSV in {raw_dir}. Drop a Lending Club accepted-loans CSV there."
-        )
-    raw = pd.read_csv(candidates[0], low_memory=False)
-    fico = (
-        raw[["fico_range_low", "fico_range_high"]].mean(axis=1)
-        if "fico_range_low" in raw.columns else raw["fico"]
+def find_accepted_file(raw_dir: Path = RAW_DIR) -> Path:
+    """Locate the LC accepted-loans file under `raw_dir`.
+
+    The Kaggle layout has folders whose names end in `.csv` (e.g.
+    `accepted_2007_to_2018q4.csv/`), so only real files are considered.
+    Prefer an uncompressed `.csv`; fall back to `.csv.gz`. Anything
+    starting with `rejected` is never returned.
+    """
+    files = [p for p in Path(raw_dir).rglob("*") if p.is_file()]
+    accepted = [p for p in files if p.name.lower().startswith("accepted")]
+    for suffix in (".csv", ".csv.gz"):
+        matches = sorted(p for p in accepted if p.name.lower().endswith(suffix))
+        if matches:
+            return matches[0]
+    raise FileNotFoundError(
+        f"No Lending Club accepted-loans file (accepted*.csv or "
+        f"accepted*.csv.gz) found under {raw_dir}."
     )
+
+
+def _load_lendingclub(raw_dir: Path = RAW_DIR) -> pd.DataFrame:
+    path = find_accepted_file(raw_dir)
+    raw = pd.read_csv(path, usecols=LC_USECOLS, low_memory=False)
+    # The LC export contains summary/footer lines ("Total amount funded in
+    # policy code ...") that are empty in every column we read.
+    raw = raw.dropna(subset=["loan_amnt", "term"])
+    fico = raw[["fico_range_low", "fico_range_high"]].mean(axis=1)
     df = pd.DataFrame({
         "loan_amount": raw["loan_amnt"],
         "term": raw["term"].astype(str).str.extract(r"(\d+)")[0].astype(int),
@@ -127,10 +157,7 @@ def _load_lendingclub(raw_dir: Path = RAW_DIR) -> pd.DataFrame:
             raw["revol_util"].astype(str).str.rstrip("%"),
             errors="coerce",
         ),
-        "noise_1": 0.0,
-        "noise_2": 0.0,
         "default": raw["loan_status"].isin(DEFAULT_STATUSES).astype(int),
-        "protected_group": "unknown",
         "issue_d": pd.to_datetime(raw["issue_d"], format="%b-%Y", errors="coerce"),
     })
     return df.dropna(subset=["fico", "dti", "annual_income", "loan_amount", "issue_d"])

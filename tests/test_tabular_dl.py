@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from src.data import load_data
+from src.synth import generate
 from src.features import engineer_features
 from src.tabular_dl import (
     FTTransformer,
@@ -14,7 +14,7 @@ from src.tabular_dl import (
 
 
 def _small_df(n: int = 200) -> pd.DataFrame:
-    return engineer_features(load_data().head(n))
+    return engineer_features(generate(n=n, seed=42))
 
 
 def test_fit_spec_includes_unseen_slot():

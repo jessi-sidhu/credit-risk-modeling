@@ -26,7 +26,6 @@ from .evaluate import (
 )
 from .features import engineer_features, split_xy
 from .models import lightgbm_classifier, logistic_regression, random_forest
-from .synth import generate
 
 
 def prepare_split(
@@ -135,16 +134,17 @@ def _fit_one(model, X_tr, y_tr, X_te, y_te, cost: CostMatrix) -> dict:
 
 
 def fit_and_evaluate_temporal(quick: bool = False) -> dict:
-    """Train all three models on temporal-trend data, evaluating both a
-    random split and a time-aware split. Same hyperparameters for both
+    """Train all three models, evaluating both a random split and a
+    time-aware split. Same hyperparameters for both
     so the only thing that varies is the validation methodology.
 
     Returns:
         {'random_split': {..per-model..}, 'temporal_split': {...},
          'meta': {...}}
     """
-    n = 5_000 if quick else 50_000
-    df = engineer_features(generate(n=n, seed=RANDOM_STATE, temporal_trend=True))
+    df = engineer_features(load_data())
+    if quick:
+        df = df.sample(n=5_000, random_state=RANDOM_STATE).reset_index(drop=True)
     cost = CostMatrix()
 
     # --- Random split baseline (ignores time) -----------------------------

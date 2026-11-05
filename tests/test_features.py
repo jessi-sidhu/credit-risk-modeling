@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from src.data import load_data
 from src.features import (
     CATEGORICAL,
     NUMERIC_ALL,
@@ -10,10 +9,11 @@ from src.features import (
     make_preprocessor,
     split_xy,
 )
+from src.synth import generate
 
 
 def test_engineered_columns_added():
-    df = load_data().head(50)
+    df = generate(n=50, seed=42)
     out = engineer_features(df)
     for col in ("loan_to_income", "installment_estimate",
                 "installment_to_income", "credit_age_proxy"):
@@ -48,7 +48,7 @@ def test_credit_age_proxy_zero_when_renting():
 def test_preprocessor_fits_on_train_only():
     """Leakage guard: fit transformer on train alone, transform both;
     same column count and no NaNs in test output."""
-    df = engineer_features(load_data())
+    df = engineer_features(generate(n=5_000, seed=42))
     X, y = split_xy(df)
     X_tr, X_te, _, _ = train_test_split(X, y, test_size=0.2, stratify=y, random_state=0)
 
@@ -69,7 +69,7 @@ def test_preprocessor_handles_unseen_category():
     """OneHotEncoder(handle_unknown='ignore') should not crash on unseen
     categories at transform time — important if real LC data has values
     the train fold never saw."""
-    df = engineer_features(load_data().head(2000))
+    df = engineer_features(generate(n=2_000, seed=42))
     X, y = split_xy(df)
     pre = make_preprocessor()
     pre.fit(X)
