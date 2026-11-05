@@ -1,132 +1,119 @@
-# Loan Default Prediction with Tabular Deep Learning
+# Credit Risk Modeling on Lending Club Loans
 
-PyTorch FT-Transformer and MLP for credit risk on a Lending Club style dataset, benchmarked against logistic regression, random forest, and a tuned LightGBM. Plus the things a credit team actually needs around the model: cost-aware threshold selection, SHAP explanations, calibration, drift monitoring, fairness checks, and out-of-time validation.
+Probability-of-default model for 36-month Lending Club loans (2007–2016 originations), validated out of time. Logistic regression is the benchmark; LightGBM is the main model. Every number below comes from `reports/artifacts/metrics.json`, written by `make train`.
 
 ![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.8-red.svg)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.5-orange.svg)
 ![LightGBM](https://img.shields.io/badge/LightGBM-4.6-green.svg)
-![tests](https://img.shields.io/badge/tests-75%20passing-brightgreen.svg)
+![tests](https://img.shields.io/badge/tests-79%20passing-brightgreen.svg)
 
 ## Results
 
-Five models on the same 80/20 stratified split (10k held-out test, 18% positive prevalence):
+Out-of-time test set: 372,802 loans issued 2015-01 to 2016-03, default rate 15.18%. Models were trained on loans issued up to 2013-12 and tuned on 2014. 95% CIs from 1,000 bootstrap resamples of the test set.
 
-| Model | PR-AUC | ROC-AUC | Train time |
-|---|---:|---:|---:|
-| Logistic regression (balanced) | 0.745 | 0.924 | <1s |
-| Random forest (300 trees) | 0.721 | 0.916 | 4s |
-| LightGBM (tuned, 30 RandomizedSearchCV iters) | 0.740 | 0.922 | ~7 min |
-| MLP (PyTorch, embeddings + 3-layer) | 0.739 | 0.921 | 16s on MPS |
-| FT-Transformer (PyTorch, from scratch) | 0.737 | 0.921 | 102s on MPS |
+| Model | ROC-AUC [95% CI] | Gini | KS | PR-AUC [95% CI] | Brier | ECE |
+|---|---|---:|---:|---|---:|---:|
+| Logistic regression | 0.6803 [0.6780, 0.6824] | 0.3606 | 0.2641 | 0.2593 [0.2565, 0.2621] | 0.1233 | 0.0287 |
+| LightGBM | 0.6817 [0.6794, 0.6838] | 0.3633 | 0.2661 | 0.2612 [0.2585, 0.2643] | 0.1236 | 0.0359 |
 
-All five within ~0.4 PR-AUC points. This matches the published finding (Grinsztajn et al. 2022) that gradient-boosted trees are the right default on small/medium tabular data; deep learning earns its place once you have multimodal features, very high-cardinality categoricals, or an order of magnitude more data.
+**LightGBM − LR (paired bootstrap):** ROC-AUC +0.0014 [+0.0006, +0.0021], PR-AUC +0.0019 [+0.0011, +0.0028].
 
-Out-of-time validation tells a different story. Train on cohorts through 2017-06, test on 2018, and PR-AUC drops to 0.65. That 6-7 point gap is the realistic production number; random splits hide it.
+The difference is statistically clear (both CIs exclude zero) but practically small. On these application-time features, the boosted model adds very little over a linear scorecard, and its probabilities are slightly less well calibrated (higher ECE). Both models under-predict default on the test cohort (see the reliability plot): the 2015–16 cohorts default more often (15.2%) than the training cohorts (12.6%).
 
-![Random vs out-of-time degradation](reports/figures/temporal_degradation.png)
+![Reliability diagram](reports/figures/reliability.png)
+
+**Cost-aware threshold.** A missed default is assumed to cost 5× a wrongly rejected good loan (`CostMatrix(fn_cost=5, fp_cost=1)`; expected cost = 5·FN + 1·FP). The threshold is picked on the 2014 validation set and then applied to the test set.
+
+| Model | Threshold (from validation) | Precision | Recall | Expected cost | Expected cost at 0.5 |
+|---|---:|---:|---:|---:|---:|
+| Logistic regression | 0.16 | 0.267 | 0.430 | 228,017 | 282,274 |
+| LightGBM | 0.15 | 0.259 | 0.481 | 224,701 | 282,940 |
+
+At 0.5 almost no loans are flagged (LR flags 480, LightGBM none), so the 0.5 column is a "no model" baseline, not a competing operating point.
+
+## How default is defined
+
+From `loan_status` in the Kaggle `accepted_2007_to_2018Q4.csv` file, keeping finished loans only:
+
+- `Fully Paid` and `Does not meet the credit policy. Status:Fully Paid` → 0
+- `Charged Off`, `Default` and `Does not meet the credit policy. Status:Charged Off` → 1
+- `Current`, `Late (16-30 days)`, `Late (31-120 days)` and `In Grace Period` are dropped (no final outcome yet).
+
+Two further filters:
+
+- **Matured cohorts only:** a loan is kept only if `issue_d + term ≤ 2019-03-31` (the snapshot date of the file). Without this, recent cohorts contain only the loans that already ended, mostly early payoffs and fast charge-offs, which biases the default rate.
+- **36-month loans only:** after the maturity filter, no 60-month loan issued after 2014-03 survives, so an out-of-time test set would contain 36-month loans only. Training on both terms would mean the splits describe different products.
+
+| Step | Rows |
+|---|---:|
+| Rows read | 2,260,668 |
+| Finished loans | 1,348,099 |
+| Key fields present | 1,347,721 |
+| Matured by 2019-03-31 | 779,013 |
+| 36-month loans | 710,794 |
+
+| Split | Issue dates | Rows | Default rate |
+|---|---|---:|---:|
+| Train | 2007-06 – 2013-12 | 175,422 | 12.63% |
+| Validation | 2014-01 – 2014-12 | 162,570 | 13.73% |
+| Test | 2015-01 – 2016-03 | 372,802 | 15.18% |
+
+## Features
+
+All features are known when the application is decided. A test (`tests/test_features.py`) fails if any post-origination column (`total_pymnt`, `recoveries`, `last_pymnt_d`, `last_fico_range_*`, `out_prncp`, …) is a model feature or is even read from the CSV.
+
+- **Borrower:** `fico` (mean of `fico_range_low/high` at application), `dti`, `annual_income`, `emp_length`, `home_ownership`, `open_acc`, `revol_util`
+- **Loan:** `loan_amount`, `term`, `purpose`
+- **LC pricing:** `grade`, `int_rate`
+- **Engineered:** `loan_to_income`, `installment_estimate`, `installment_to_income`, `emp_x_homeowner` (emp_length × owns/mortgages home)
+
+`grade` and `int_rate` are outputs of Lending Club's own risk model. They're legitimate at decision time, but using them means the model partly re-learns LC's score. `USE_LC_GRADE = False` in `src/features.py` drops them and the two installment features derived from `int_rate`.
 
 ## Quickstart
 
 ```bash
-make install         # creates .venv, installs pinned deps (incl. PyTorch)
-make test            # 63 tests
-make smoke           # 5k row training run, ~90s
-make train           # full random-split run for LR / RF / tuned LightGBM (~7 min)
-make train-temporal  # OOT comparison (~30s)
-make train-dl        # MLP + FT-Transformer in PyTorch, ~3-5 min on MPS / longer on CPU
-make notebooks       # execute all 8 notebooks in order
+make install       # .venv + pinned deps
+make test          # 79 tests (synthetic fixtures; the 1.6 GB CSV is not needed)
+make smoke         # 5,000-row run on real data, no artifacts saved
+make train         # full out-of-time run; writes reports/artifacts/metrics.json and the reliability plot
+make train-random  # random 80/20 split, comparison only
 ```
 
-`make all` chains install, test, train, train-temporal, train-dl, notebooks. `make verify` wipes generated state and rebuilds end-to-end. `make help` lists every target.
+`make train` needs the Kaggle Lending Club download in `data/archive/` (git-ignored). The loader picks the `accepted_*` CSV (uncompressed if present, otherwise `.csv.gz`) and never reads the rejected-loans file.
 
-## What's in here
+## Method
 
-`src/` modules:
-- `synth.py` synthetic data generator with optional macro and regime trends
-- `data.py` `load_data`, `temporal_split`, and the Lending Club CSV swap
-- `features.py` `ColumnTransformer` plus four engineered ratio features
-- `models.py` LR, RF, and LightGBM Pipeline factories
-- `train.py` random-split and `--temporal` training orchestration
-- `tabular_dl.py` PyTorch MLP and FT-Transformer (from-scratch implementation)
-- `tabular_dl_train.py` training loop with AdamW, cosine LR, early stopping
-- `evaluate.py` PR-AUC, ROC-AUC, cost-aware threshold sweep, sensitivity
-- `interpret.py` SHAP wrapper around the sklearn pipeline
-- `errors.py` per-subgroup error analysis with FNR-lift
-- `calibration.py` reliability tables, ECE, Platt and isotonic recalibrators
-- `drift.py` Population Stability Index per feature
-- `fairness.py` group metrics, parity ratios, four-fifths rule
-- `monitor.py` rolling performance with configurable label-resolution lag
-- `conformal.py` split conformal prediction for binary classification (distribution-free coverage)
-- `stacking.py` logistic-regression meta-learner over base-model probabilities
+- **Split:** out of time on `issue_d` (`src/train.py`, `TRAIN_UNTIL = "2013-12"`, `TEST_FROM = "2015-01"`). The test set is only used for the final report.
+- **Preprocessing:** median imputation, scaling (LR only) and one-hot encoding inside an sklearn `Pipeline`, fit on the training split only.
+- **Logistic regression:** no class reweighting, so its probabilities can be compared on Brier/ECE. Class imbalance is handled by the cost-optimal threshold instead.
+- **LightGBM:** 30-candidate random search, each candidate fit on train with early stopping on validation PR-AUC; the best candidate by validation PR-AUC is kept (85 trees, 22 leaves, learning rate 0.037).
+- **Metrics:** ROC-AUC, Gini (= 2·AUC − 1), KS, PR-AUC, Brier, ECE (10 quantile bins), and paired bootstrap CIs (`src/evaluate.py`).
 
-`notebooks/`:
-- `01_eda.ipynb` distributions, correlations, default rate by category
-- `02_modeling.ipynb` GBM bake-off, cost-aware threshold, FN:FP sensitivity
-- `03_interpretation.ipynb` SHAP global, directional, and per-loan
-- `04_calibration.ipynb` reliability diagrams plus Platt, isotonic, and CV-on-train recalibration
-- `05_drift.ipynb` PSI on simulated shifts, plus the label-delay performance monitor
-- `06_fairness.ipynb` per-group approval rate, FNR, FPR, four-fifths check
-- `07_temporal.ipynb` random vs out-of-time split comparison
-- `08_tabular_dl.ipynb` MLP and FT-Transformer in PyTorch vs LightGBM, plus DL-side audits
-- `09_conformal.ipynb` distribution-free prediction sets with finite-sample coverage guarantees, marginal and per-group
-- `10_stacking.ipynb` logistic-regression meta-learner over the five base models, with cost-aware threshold
+## Known limitations
 
-`tests/`: 75 pytest tests. Coverage includes the leakage guard, threshold selection, calibration, drift, fairness, monitor, the LC swap fixture, `temporal_split`, and DL forward / backward / overfit-tiny-batch sanity.
+- **Binary target ignores timing.** A loan that charges off in month 3 and one that charges off in month 35 are the same label. Survival / time-to-default modeling is the next phase.
+- **Accepted loans only.** There's no reject inference, so the model describes applicants LC approved, not the full applicant population.
+- **LC grade is a feature.** `grade` and `int_rate` come from LC's own model, so part of the measured performance is LC's. See `USE_LC_GRADE` above.
+- **36-month loans only.** 60-month loans are excluded (see above); the results don't describe them.
+- **Default rate shifts over time.** The test cohorts default more often than the training cohorts, and both models under-predict on the test set. Recalibrating on recent cohorts would be needed before using the probabilities directly.
+- **The cost matrix is a heuristic.** 5:1 is a rough rule of thumb, not a lender's measured loss.
+- **Notebooks not yet re-run.** `notebooks/01`–`05` and the figures they produce (EDA, SHAP, calibration, drift) still show results from the earlier synthetic dataset. Only `reports/figures/reliability.png` comes from the real-data run.
 
-## Why these choices
+## Layout
 
-**PyTorch tabular DL from scratch.** FT-Transformer is implemented end-to-end (numerical tokenizer, categorical tokenizer, [CLS] prepending, pre-norm Transformer blocks, attention via `nn.MultiheadAttention`) rather than via a library wrapper. About 200 lines, easier to defend in an interview than `pytorch_tabular.models.FTTransformer(...)`.
-
-**MLP next to FT-Transformer.** A vanilla embedding-MLP is the right floor for "did attention buy us anything." On this DGP it didn't; the MLP matches the Transformer at a fraction of the train time. That's a real finding worth showing.
-
-**Apple Silicon MPS by default.** `tabular_dl.get_device()` prefers MPS, then CUDA, then CPU. Training the FT-Transformer on the full 50k dataset takes ~100 seconds on MPS; CPU is ~5x slower.
-
-**`pos_weight` in BCE for class imbalance.** The 18% positives are handled at the loss level rather than via SMOTE / oversampling. Side effect: the resulting probabilities are inflated (Brier 0.125 for MLP vs 0.081 for LightGBM). Notebook 08 calls this out and recommends recalibrating before the cost-aware threshold; the existing Platt/isotonic helpers in `calibration.py` apply directly.
-
-**PR-AUC, not accuracy.** With 18% positives, predicting "no default" for every row scores 82% accuracy. PR-AUC focuses on the rare class.
-
-**Cost-aware threshold, not 0.5.** Missing a default costs roughly the loan principal; rejecting a good loan costs the foregone interest margin. The 5:1 FN:FP ratio puts the optimal threshold near 0.14, far from 0.5, and cuts expected loss by 33.9% on the LightGBM model.
-
-**Tune the boosting model only.** LR has little to tune and RF defaults are reasonable. Spending the search budget on LightGBM, which benefits most, keeps the comparison fair.
-
-**Pipeline-everywhere preprocessing.** Imputation, scaling, and one-hot encoding live inside an sklearn Pipeline so they refit per CV fold. A unit test enforces this. The PyTorch dataset uses an analogous `fit_spec(train_df)` that computes categorical vocabularies and per-feature standardization stats from train alone.
-
-**Two intentional noise features in the DGP.** SHAP on LightGBM and permutation importance on FT-Transformer both rank them near the bottom (PR-AUC drop < 0.002 for the DL case). If they ranked high, that would point to leakage or a fitting bug.
-
-**Temporal split is the production methodology.** Random splits let a model see same-window information in train and test. The synthetic data has a built-in 2018 regime change; on it, the random/OOT gap is 6-7 PR-AUC points. On real LC data the gap is usually larger.
-
-## Real Lending Club data
-
-Default mode is synthetic. To run on real LC data:
-
-1. Drop an LC accepted-loans CSV into `data/raw/`.
-2. Call `load_data(source="lendingclub")`. Returns the same 17-column schema as `source="synthetic"`.
-
-The loader handles LC's quirks: `term` suffix, percent strings, `emp_length` variants, `issue_d` parsing, and the `loan_status` to binary `default` mapping. `tests/test_lendingclub_swap.py` covers each parsing case on a fixture, so you don't need the ~1 GB CSV to verify the loader works.
-
-## Limitations
-
-The synthetic DGP is largely additive in the true features, which is why LR, LightGBM, and the two PyTorch models all land within noise of each other. On real LC data with messier interactions and time effects, the gap between the model families typically opens up.
-
-The fairness audit uses a synthetic `protected_group` correlated with income. The framework ports to real protected-class data, but the disparities reported are by construction.
-
-Default is treated as a binary outcome. For pricing or capital allocation, time-to-event (survival) modeling is the correct frame.
-
-The DL probabilities need recalibration for cost-sensitive deployment because of the `pos_weight` training. The recalibration helpers in `src/calibration.py` apply directly; this just isn't auto-applied in the DL training loop.
+- `src/data.py`: Lending Club loader, target definition, maturity and term filters, `temporal_split`
+- `src/features.py`: engineered features, preprocessing, `USE_LC_GRADE`
+- `src/models.py`: logistic regression and LightGBM pipelines
+- `src/train.py`: out-of-time training (default) and `--random-split`
+- `src/evaluate.py`: metrics, bootstrap CIs, cost-aware threshold
+- `src/calibration.py`: reliability table/plot, ECE, Platt and isotonic recalibration
+- `src/drift.py`, `src/monitor.py`, `src/interpret.py`, `src/errors.py`: PSI, rolling performance monitor, SHAP, error slicing (used by the notebooks)
+- `src/synth.py`: small synthetic generator used **only** as a test fixture
+- `reports/report.md`: full write-up
 
 ## Reproducibility
 
-`RANDOM_STATE = 42` is threaded through every random operation: synthetic generation, train/test splits, model initialization, randomized search, SHAP sampling, recalibration folds, and PyTorch generators. Dependencies are pinned in `requirements.txt`. `make verify` wipes generated state and rebuilds end-to-end; the numbers in this README match a fresh run.
-
-## Future work
-
-- Add a calibration step inside the DL training loop (Platt or temperature scaling on the validation set) so the saved probabilities are usable in a cost-sensitive selector without a separate recalibration pass.
-- Run the pipeline on actual Lending Club CSVs.
-- Survival or hazard modeling for time-to-default rather than the binary outcome.
-- Multimodal: add a `desc` field to the synthetic generator and pipe it through a small text encoder (DistilBERT or sentence-transformers) for a tabular + text bake-off.
-- Fairness-constrained training (e.g., exponentiated gradient) with paired before / after audit.
-- A deployment wrapper (FastAPI plus MLflow) for the trained pipeline.
+`RANDOM_STATE = 42` drives the search, model seeds and bootstrap. Dependencies are pinned in `requirements.txt`.
 
 ## License
 

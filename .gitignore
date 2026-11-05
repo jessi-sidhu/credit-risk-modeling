@@ -37,6 +37,8 @@ reports/artifacts/*.joblib
 reports/artifacts/*.csv
 reports/artifacts/*.npy
 reports/artifacts/*.json
+# metrics.json is tracked: README/report numbers are quoted from it
+!reports/artifacts/metrics.json
 reports/artifacts/random_split/*
 
 # Keep folder placeholders
