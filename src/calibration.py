@@ -30,7 +30,8 @@ def reliability_table(y_true, y_prob, n_bins: int = 10) -> pd.DataFrame:
     empirical default rate per bin alongside the mean prediction."""
     y_true = np.asarray(y_true).astype(int)
     y_prob = np.asarray(y_prob, dtype=float)
-    prob_pred, prob_true = calibration_curve(
+    # sklearn returns (prob_true, prob_pred) in that order
+    prob_true, prob_pred = calibration_curve(
         y_true, y_prob, n_bins=n_bins, strategy="quantile"
     )
 
@@ -123,3 +124,41 @@ def cv_calibrated_probs(pipe, X, y, cv: int = 5, random_state: int = 42) -> np.n
         m.fit(X.iloc[tr_idx], y_arr[tr_idx])
         out[va_idx] = m.predict_proba(X.iloc[va_idx])[:, 1]
     return out
+
+
+def plot_reliability(y_true, probs: dict[str, np.ndarray], path, n_bins: int = 10) -> None:
+    """Reliability diagram (quantile bins) for several models on one axis,
+    saved to `path`."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    colors = ["#2a78d6", "#eb6834"]   # categorical slots 1-2, fixed order
+    markers = ["o", "s"]              # secondary encoding, not color alone
+    fig, ax = plt.subplots(figsize=(6.5, 6))
+    fig.patch.set_facecolor("#fcfcfb"); ax.set_facecolor("#fcfcfb")
+
+    hi = 0.0
+    for i, (name, y_prob) in enumerate(probs.items()):
+        t = reliability_table(y_true, y_prob, n_bins=n_bins)
+        ece = expected_calibration_error(y_true, y_prob, n_bins=n_bins)
+        ax.plot(t["mean_predicted"], t["fraction_positive"], color=colors[i],
+                marker=markers[i], markersize=8, lw=2,
+                markeredgecolor="#fcfcfb", markeredgewidth=2,
+                label=f"{name} (ECE {ece:.3f})")
+        hi = max(hi, t["mean_predicted"].max(), t["fraction_positive"].max())
+
+    lim = min(1.0, hi * 1.08)
+    ax.plot([0, lim], [0, lim], color="#8a8a85", lw=1, ls="--", label="perfectly calibrated")
+    ax.set_xlim(0, lim); ax.set_ylim(0, lim)
+    ax.set_xlabel("Mean predicted default probability (per bin)")
+    ax.set_ylabel("Observed default rate (per bin)")
+    ax.set_title(f"Reliability on out-of-time test set ({n_bins} quantile bins)", loc="left")
+    ax.grid(color="#e6e6e1", lw=0.8); ax.set_axisbelow(True)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    ax.legend(frameon=False, loc="upper left")
+    fig.tight_layout()
+    fig.savefig(path, dpi=120, facecolor=fig.get_facecolor())
+    plt.close(fig)
+

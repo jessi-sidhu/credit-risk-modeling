@@ -35,18 +35,23 @@ from sklearn.model_selection import (
 
 from . import RANDOM_STATE
 from .data import load_data, temporal_split
+from .calibration import plot_reliability
 from .evaluate import (
     CostMatrix,
+    bootstrap_ci,
     cost_optimal_threshold,
     evaluate_at_threshold,
     expected_cost,
+    headline_metrics,
 )
 from .features import engineer_features, make_preprocessor, split_xy
 from .models import lightgbm_classifier, logistic_regression
 
 logger = logging.getLogger(__name__)
 
-_ARTIFACTS = Path(__file__).resolve().parent.parent / "reports" / "artifacts"
+_REPORTS = Path(__file__).resolve().parent.parent / "reports"
+_ARTIFACTS = _REPORTS / "artifacts"
+N_BOOTSTRAP = 1_000
 
 # Out-of-time split on the matured cohorts (2007-06 .. 2016-03).
 TRAIN_UNTIL = "2013-12"
@@ -183,6 +188,14 @@ def fit_and_evaluate_oot(
         "best_iteration": tuned["best_iteration"],
         "trials": tuned["trials"],
     }
+    _, y_te = splits["test"]
+    probs = {name: results[name]["y_prob"] for name in ("logistic_regression", "lightgbm_tuned")}
+    for name, y_prob in probs.items():
+        results[name]["headline"] = headline_metrics(y_te, y_prob)
+    results["bootstrap"] = bootstrap_ci(
+        y_te, probs, diff=("lightgbm_tuned", "logistic_regression"),
+        n_boot=N_BOOTSTRAP, seed=RANDOM_STATE,
+    )
     results["meta"] = {
         "split": "out_of_time",
         "train_until": train_until,
@@ -275,11 +288,57 @@ def fit_and_evaluate_all(quick: bool = False) -> Tuple[dict, tuple]:
 
 # --- Reporting ----------------------------------------------------------------
 
+_MODELS = ("logistic_regression", "lightgbm_tuned")
+
+
+def headline_table(results: dict) -> pd.DataFrame:
+    """Test-set ROC-AUC, Gini, KS, PR-AUC, Brier, ECE with bootstrap CIs."""
+    rows = []
+    for name in _MODELS:
+        h, ci = results[name]["headline"], results["bootstrap"][name]
+        rows.append({
+            "model": name,
+            "roc_auc": f"{h['roc_auc']:.4f} [{ci['roc_auc']['ci_low']:.4f}, {ci['roc_auc']['ci_high']:.4f}]",
+            "gini": round(h["gini"], 4),
+            "ks": round(h["ks"], 4),
+            "pr_auc": f"{h['pr_auc']:.4f} [{ci['pr_auc']['ci_low']:.4f}, {ci['pr_auc']['ci_high']:.4f}]",
+            "brier": round(h["brier"], 4),
+            "ece": round(h["ece"], 4),
+        })
+    return pd.DataFrame(rows).set_index("model")
+
+
+def metrics_summary(results: dict) -> dict:
+    """Everything the README/report may quote, as plain JSON types."""
+    def _plain(d):
+        return {k: (v.item() if hasattr(v, "item") else v) for k, v in d.items()}
+
+    return {
+        "meta": results["meta"],
+        "models": {
+            name: {
+                "test": results[name]["headline"],
+                "cost_threshold": {
+                    "threshold_chosen_on": "validation",
+                    **_plain(results[name]["metrics_optimal"]),
+                },
+                "at_0.5": _plain(results[name]["metrics_default"]),
+            }
+            for name in _MODELS
+        },
+        "bootstrap_95ci": {"n_resamples": N_BOOTSTRAP, **results["bootstrap"]},
+        "lightgbm": {
+            "best_params": _plain(results["lightgbm_tuned"]["best_params"]),
+            "best_val_pr_auc": results["lightgbm_tuned"]["best_val_pr_auc"],
+        },
+        "cost_matrix": {"fn_cost": CostMatrix().fn_cost, "fp_cost": CostMatrix().fp_cost},
+    }
+
+
 def results_table(results: dict) -> pd.DataFrame:
     rows = []
-    for name, r in results.items():
-        if name == "meta":
-            continue
+    for name in _MODELS:
+        r = results[name]
         m_opt = r["metrics_optimal"]
         m_def = r["metrics_default"]
         rows.append({
@@ -328,6 +387,13 @@ def save_artifacts(results: dict, X_te, y_te, table: pd.DataFrame, out_dir) -> N
         json.dump(results["meta"], open(out / "split_meta.json", "w"), indent=2)
     if "trials" in lgbm:
         lgbm["trials"].to_csv(out / "lgbm_trials.csv", index=False)
+    if "bootstrap" in results:
+        json.dump(metrics_summary(results), open(out / "metrics.json", "w"), indent=2)
+        plot_reliability(
+            y_te,
+            {name: results[name]["y_prob"] for name in _MODELS},
+            _REPORTS / "figures" / "reliability.png",
+        )
 
 
 def main() -> None:
@@ -357,6 +423,13 @@ def main() -> None:
         lgbm = results["lightgbm_tuned"]
         print(f"LightGBM best params: {lgbm['best_params']}  "
               f"(val PR-AUC {lgbm['best_val_pr_auc']:.4f})")
+        print("\nOut-of-time test metrics (95% bootstrap CI):")
+        print(headline_table(results))
+        d = results["bootstrap"]["lightgbm_tuned - logistic_regression"]
+        for m in ("roc_auc", "pr_auc"):
+            print(f"LightGBM - LR {m}: {d[m]['estimate']:+.4f} "
+                  f"[{d[m]['ci_low']:+.4f}, {d[m]['ci_high']:+.4f}]")
+        print()
 
     table = results_table(results)
     print(table)

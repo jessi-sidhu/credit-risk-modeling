@@ -54,3 +54,20 @@ def test_lgbm_early_stopping_sets_n_estimators(oot):
     assert lgbm["best_params"]["n_estimators"] == lgbm["best_iteration"] >= 1
     assert len(lgbm["trials"]) == 2
     assert np.isclose(lgbm["trials"]["val_pr_auc"].max(), lgbm["best_val_pr_auc"])
+
+
+def test_oot_metrics_summary_has_ci_for_both_models_and_diff(oot):
+    import json
+    from src.train import N_BOOTSTRAP, metrics_summary
+    results, _ = oot
+    summary = metrics_summary(results)
+    json.dumps(summary)                    # must be plain JSON
+    ci = summary["bootstrap_95ci"]
+    assert ci["n_resamples"] == N_BOOTSTRAP
+    for key in ("logistic_regression", "lightgbm_tuned",
+                "lightgbm_tuned - logistic_regression"):
+        assert {"roc_auc", "pr_auc"} <= set(ci[key])
+    for name in ("logistic_regression", "lightgbm_tuned"):
+        assert set(summary["models"][name]["test"]) == {
+            "roc_auc", "gini", "ks", "pr_auc", "brier", "ece"}
+        assert summary["models"][name]["cost_threshold"]["threshold_chosen_on"] == "validation"
