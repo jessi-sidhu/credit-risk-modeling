@@ -10,7 +10,6 @@ help:
 	@echo "  smoke       quick training run (5k rows, 10 tuning iters, < 90s)"
 	@echo "  train       full training run with 30 tuning iters (~7 min)"
 	@echo "  train-temporal  random vs out-of-time split comparison (~30s)"
-	@echo "  train-dl        train MLP and FT-Transformer in PyTorch (~3-5 min)"
 	@echo "  notebooks   execute all notebooks in order, in-place"
 	@echo "  all         install -> test -> train -> notebooks"
 	@echo "  verify      wipe generated artifacts, then run all (full reproduce)"
@@ -34,9 +33,6 @@ train:
 train-temporal:
 	$(PY) -m src.train --temporal --save
 
-train-dl:
-	$(PY) -m src.tabular_dl_train --save
-
 notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/01_eda.ipynb            --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/02_modeling.ipynb       --inplace --ExecutePreprocessor.timeout=600
@@ -44,17 +40,13 @@ notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/04_calibration.ipynb    --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/07_temporal.ipynb       --inplace --ExecutePreprocessor.timeout=600
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/05_drift.ipynb          --inplace --ExecutePreprocessor.timeout=600
-	$(JUPYTER) nbconvert --to notebook --execute notebooks/06_fairness.ipynb       --inplace --ExecutePreprocessor.timeout=600
-	$(JUPYTER) nbconvert --to notebook --execute notebooks/08_tabular_dl.ipynb     --inplace --ExecutePreprocessor.timeout=900
-	$(JUPYTER) nbconvert --to notebook --execute notebooks/09_conformal.ipynb      --inplace --ExecutePreprocessor.timeout=300
-	$(JUPYTER) nbconvert --to notebook --execute notebooks/10_stacking.ipynb       --inplace --ExecutePreprocessor.timeout=300
 
-all: install test train train-temporal train-dl notebooks
+all: install test train train-temporal notebooks
 
 clean:
 	rm -rf reports/artifacts/*.joblib reports/artifacts/*.csv \
 	       reports/artifacts/*.npy reports/artifacts/*.json \
-	       reports/artifacts/temporal/* reports/artifacts/dl/* \
+	       reports/artifacts/temporal/* \
 	       data/synthetic/*.csv
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
@@ -67,6 +59,5 @@ verify: clean
 	$(MAKE) test
 	$(MAKE) train
 	$(MAKE) train-temporal
-	$(MAKE) train-dl
 	$(MAKE) notebooks
 	@echo "✔ verify: full pipeline reproduced from scratch"

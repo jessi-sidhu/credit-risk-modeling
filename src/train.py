@@ -1,4 +1,4 @@
-"""Train, tune, and evaluate the three models.
+"""Train, tune, and evaluate logistic regression (benchmark) and LightGBM.
 
 Use as a module from the modeling notebook, or run as a CLI:
     python -m src.train [--quick]
@@ -26,7 +26,7 @@ from .evaluate import (
     evaluate_at_threshold,
 )
 from .features import engineer_features, split_xy
-from .models import lightgbm_classifier, logistic_regression, random_forest
+from .models import lightgbm_classifier, logistic_regression
 
 
 def prepare_split(
@@ -79,19 +79,9 @@ def fit_and_evaluate_all(quick: bool = False) -> Tuple[dict, tuple]:
 
     results: dict[str, Any] = {}
 
-    for name, model in [
-        ("logistic_regression", logistic_regression()),
-        ("random_forest", random_forest()),
-    ]:
-        model.fit(X_tr, y_tr)
-        y_prob = model.predict_proba(X_te)[:, 1]
-        thr = cost_optimal_threshold(y_te, y_prob, cost)
-        results[name] = {
-            "model": model,
-            "y_prob": y_prob,
-            "metrics_default": evaluate_at_threshold(y_te, y_prob, 0.5),
-            "metrics_optimal": evaluate_at_threshold(y_te, y_prob, thr),
-        }
+    results["logistic_regression"] = _fit_one(
+        logistic_regression(), X_tr, y_tr, X_te, y_te, cost,
+    )
 
     search = tune_lightgbm(X_tr, y_tr, n_iter=n_iter)
     best = search.best_estimator_
@@ -135,7 +125,7 @@ def _fit_one(model, X_tr, y_tr, X_te, y_te, cost: CostMatrix) -> dict:
 
 
 def fit_and_evaluate_temporal(quick: bool = False) -> dict:
-    """Train all three models, evaluating both a random split and a
+    """Train both models, evaluating both a random split and a
     time-aware split. Same hyperparameters for both
     so the only thing that varies is the validation methodology.
 
@@ -165,7 +155,6 @@ def fit_and_evaluate_temporal(quick: bool = False) -> dict:
     def _models():
         return {
             "logistic_regression": logistic_regression(),
-            "random_forest": random_forest(),
             "lightgbm_tuned": lightgbm_classifier(**tuned_params) if tuned_params else lightgbm_classifier(),
         }
 
@@ -251,7 +240,6 @@ def save_artifacts(results: dict, X_te, y_te, table: pd.DataFrame, out_dir) -> N
     y_te.to_frame("default").to_csv(out / "y_test.csv", index=False)
     np.save(out / "y_prob_lightgbm.npy", lgbm["y_prob"])
     np.save(out / "y_prob_logreg.npy", results["logistic_regression"]["y_prob"])
-    np.save(out / "y_prob_rf.npy", results["random_forest"]["y_prob"])
     table.to_csv(out / "results_table.csv")
 
     bp = lgbm["best_params"]

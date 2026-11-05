@@ -5,13 +5,11 @@ preprocessor is fit on the training fold only — protecting against
 leakage end-to-end.
 
 - Logistic regression baseline: scaled numerics, balanced class weight.
-- Random forest: defaults, no scaling needed.
 - LightGBM: defaults; the tuned version is built in `train.py`.
 """
 from __future__ import annotations
 
 from lightgbm import LGBMClassifier
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
@@ -25,17 +23,6 @@ def logistic_regression() -> Pipeline:
         ("clf", LogisticRegression(
             max_iter=2000,
             class_weight="balanced",
-            random_state=RANDOM_STATE,
-        )),
-    ])
-
-
-def random_forest() -> Pipeline:
-    return Pipeline([
-        ("pre", make_preprocessor(scale_numeric=False)),
-        ("clf", RandomForestClassifier(
-            n_estimators=300,
-            n_jobs=-1,
             random_state=RANDOM_STATE,
         )),
     ])

@@ -37,7 +37,6 @@ reports/artifacts/*.joblib
 reports/artifacts/*.csv
 reports/artifacts/*.npy
 reports/artifacts/*.json
-reports/artifacts/dl/*
 reports/artifacts/temporal/*
 
 # Keep folder placeholders
