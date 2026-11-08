@@ -21,7 +21,7 @@ from lightgbm import LGBMClassifier, early_stopping
 from sklearn.linear_model import LogisticRegression
 
 from . import RANDOM_STATE
-from .features import make_preprocessor
+from .features import feature_lists, make_preprocessor
 from .survival_data import EVENT_CENSORED
 
 logger = logging.getLogger(__name__)
@@ -30,6 +30,13 @@ PERIOD_MONTHS = 3
 TERMS = (36, 60)
 N_PERIODS = {t: t // PERIOD_MONTHS for t in TERMS}           # 12 and 20 quarters
 MAX_PERIODS = max(N_PERIODS.values())
+
+# Numeric features are capped at these training-set quantiles before the
+# Phase 1 preprocessor. Recent LC loans include stated incomes near zero
+# (and one of exactly 0, which makes loan_to_income infinite), DTI up to
+# 999 and incomes up to $110M. Logistic regression extrapolates linearly
+# on such values and its hazards saturate at 0 or 1; trees are unaffected.
+CLIP_QUANTILES = (0.001, 0.999)
 
 # Cap on the number of LOANS (not rows) used for fitting, so the expanded
 # table fits in memory. Loans are sampled, never individual rows, so every
@@ -121,8 +128,10 @@ class HazardModel:
     kind='lgbm' LightGBM multiclass; `period` and `term` enter as numeric
                 features so trees can learn their interactions.
 
-    The Phase 1 preprocessor (impute, scale for LR, one-hot) is fit on the
-    training rows; the period block is appended after it.
+    Numeric features are capped at training quantiles (CLIP_QUANTILES,
+    infinities become missing), then the Phase 1 preprocessor (impute,
+    scale for LR, one-hot) is fit on the training rows; the period block
+    is appended after it.
     """
 
     def __init__(self, kind: str, **params: Any):
@@ -141,12 +150,25 @@ class HazardModel:
         block[np.arange(len(period)), cols] = 1.0
         return block
 
+    def _fit_clip(self, pp: pd.DataFrame) -> None:
+        numeric, _ = feature_lists()
+        vals = pp[numeric].replace([np.inf, -np.inf], np.nan)
+        lo, hi = CLIP_QUANTILES
+        self.clip_ = {c: (float(vals[c].quantile(lo)), float(vals[c].quantile(hi))) for c in numeric}
+
+    def _clip(self, X: pd.DataFrame) -> pd.DataFrame:
+        X = X.copy()
+        for c, (lo, hi) in self.clip_.items():
+            X[c] = X[c].replace([np.inf, -np.inf], np.nan).clip(lo, hi)
+        return X
+
     def _design(self, pp: pd.DataFrame) -> np.ndarray:
-        base = self.pre.transform(pp).astype(np.float32)
+        base = self.pre.transform(self._clip(pp)).astype(np.float32)
         return np.hstack([base, self._period_block(pp["period"].to_numpy(), pp["term"].to_numpy())])
 
     def fit(self, pp: pd.DataFrame, eval_pp: pd.DataFrame | None = None) -> "HazardModel":
-        self.pre.fit(pp)
+        self._fit_clip(pp)
+        self.pre.fit(self._clip(pp))
         Z, y = self._design(pp), pp["y"].to_numpy()
         if self.kind == "lr":
             self.clf = LogisticRegression(max_iter=1000, random_state=RANDOM_STATE, **self.params)
@@ -178,7 +200,7 @@ class HazardModel:
         terms = loans["term"].to_numpy()
         for lo in range(0, n, chunk):
             sl = slice(lo, min(lo + chunk, n))
-            base = self.pre.transform(loans.iloc[sl]).astype(np.float32)
+            base = self.pre.transform(self._clip(loans.iloc[sl])).astype(np.float32)
             t_chunk = terms[sl]
             for p in range(1, MAX_PERIODS + 1):
                 m = t_chunk // PERIOD_MONTHS >= p

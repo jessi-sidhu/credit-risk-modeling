@@ -40,6 +40,9 @@ reports/artifacts/*.json
 # metrics.json is tracked: README/report numbers are quoted from it
 !reports/artifacts/metrics.json
 reports/artifacts/random_split/*
+# Phase 2: models, hazards and per-loan tables are regenerated; JSON summaries are tracked
+reports/artifacts/survival/*
+!reports/artifacts/survival/*.json
 
 # Keep folder placeholders
 !**/.gitkeep

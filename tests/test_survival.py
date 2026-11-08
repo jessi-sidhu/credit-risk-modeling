@@ -131,3 +131,23 @@ def test_hazard_model_fits_and_predicts_curves(kind):
     c = cumulative_incidence(h)
     assert ((c["cif_default"] >= 0) & (c["cif_default"] <= 1)).all()
     assert (np.diff(c["cif_default"], axis=1) >= -1e-7).all()
+
+
+def test_extreme_and_infinite_inputs_do_not_saturate_lr_hazards():
+    rng = np.random.default_rng(2)
+    n = 400
+    terms = rng.choice([36, 60], n).tolist()
+    ev = rng.choice([C, D, P], n, p=[0.5, 0.2, 0.3])
+    dur = [int(rng.integers(1, t + 1)) for t in terms]
+    f, o = _loans(dur, ev.tolist(), terms=terms, seed=2)
+    m = HazardModel("lr").fit(expand_person_period(f, o))
+    weird = f.iloc[:3].copy()
+    weird["annual_income"] = [0.0, 1.0, 1e9]
+    weird = engineer_features(weird.drop(columns=["loan_to_income", "installment_estimate",
+                                                  "installment_to_income", "emp_x_homeowner"]))
+    weird["dti"] = [999.0, -1.0, 500.0]
+    assert np.isinf(weird["loan_to_income"]).any()
+    h = m.hazards(weird)
+    first = h[:, 0, :]
+    assert np.isfinite(first).all()
+    assert (first[:, 1] < 0.9).all() and (first[:, 1] > 1e-4).all()
