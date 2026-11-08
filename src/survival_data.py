@@ -87,7 +87,7 @@ def build_outcomes(raw: pd.DataFrame, snapshot_date: str = SNAPSHOT_DATE) -> pd.
 
     `raw` needs `term` (int), `issue_d` (datetime), `loan_status` and
     `last_pymnt_d` (datetime, may be NaT). Returns a frame with
-    `duration`, `event`, `loan_status`, `clipped` and `impossible`.
+    `duration`, `event`, `loan_status`, `finished`, `clipped` and `impossible`.
     """
     term = raw["term"].astype(int)
     status = raw["loan_status"]
@@ -124,6 +124,9 @@ def build_outcomes(raw: pd.DataFrame, snapshot_date: str = SNAPSHOT_DATE) -> pd.
         "duration": duration.astype("Int64"),
         "event": event,
         "loan_status": status,
+        # reached a final status (default or paid off, early or at term);
+        # lets downstream code avoid touching loan_status
+        "finished": is_default | is_paid,
         "clipped": clipped,
         "impossible": impossible,
     })
@@ -136,7 +139,7 @@ def load_survival_data(
     """(features, outcomes) for every accepted loan, both indexed by LC `id`.
 
     `features` has the Phase 1 feature schema (no `default` column);
-    `outcomes` has `duration`, `event`, `loan_status`.
+    `outcomes` has `duration`, `event`, `loan_status`, `finished`, `clipped`.
     """
     path = find_accepted_file(raw_dir)
     usecols = ["id"] + LC_USECOLS + [c for c in OUTCOME_COLS if c not in LC_USECOLS]

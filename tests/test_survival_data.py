@@ -96,6 +96,8 @@ def test_load_survival_data_end_to_end(tmp_path):
     assert feats.index.equals(outs.index)
     assert outs["event"].tolist() == [c[4] for c in CASES]
     assert outs["duration"].tolist() == [c[5] for c in CASES]
+    assert outs["finished"].tolist() == [c[0] in ("Charged Off", "Default", "Fully Paid")
+                                         or c[0].startswith(_DNM) for c in CASES]
     assert set(feats["term"]) == {36, 60}
     rc = feats.attrs["row_counts"]
     assert rc["impossible"] == 1 and rc["clipped"] == 2 and rc["final"] == len(CASES)

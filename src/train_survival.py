@@ -151,7 +151,7 @@ def main() -> None:
     table = pd.DataFrame({
         "issue_d": f_te["issue_d"].dt.strftime("%Y-%m"), "term": f_te["term"], "grade": f_te["grade"],
         "int_rate": f_te["int_rate"], "loan_amount": f_te["loan_amount"],
-        "duration": o_te["duration"], "event": o_te["event"], "loan_status": o_te["loan_status"],
+        "duration": o_te["duration"], "event": o_te["event"], "finished": o_te["finished"],
     }, index=f_te.index)
     for name, model in (("lr", lr), ("lgbm", lgbm)):
         t0 = time.time()
