@@ -119,7 +119,9 @@ def plot_predicted_vs_realized(tbl: pd.DataFrame, path) -> None:
     ax.grid(axis="y", color="#e6e6e1", lw=0.8); ax.set_axisbelow(True)
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
-    ax.legend(frameon=False, fontsize=9, loc="upper left")
+    top = max(tbl[c].max() for c, _, _ in bars) * 100
+    ax.set_ylim(0, top * 1.3)
+    ax.legend(frameon=False, fontsize=9, loc="upper center", ncol=3)
     fig.tight_layout(); fig.savefig(path, dpi=120, facecolor=fig.get_facecolor()); plt.close(fig)
 
 

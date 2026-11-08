@@ -1,0 +1,89 @@
+{
+  "note": "Illustration only: no macro scenarios, no staging rules, LGD is a grade average.",
+  "lgd_by_grade": {
+    "A": {
+      "lgd": 0.8945270739968371,
+      "n_train_chargeoffs": 2230
+    },
+    "B": {
+      "lgd": 0.8852772479896082,
+      "n_train_chargeoffs": 8406
+    },
+    "C": {
+      "lgd": 0.878054384574151,
+      "n_train_chargeoffs": 10370
+    },
+    "D": {
+      "lgd": 0.878238902181833,
+      "n_train_chargeoffs": 7646
+    },
+    "E": {
+      "lgd": 0.8736421111788334,
+      "n_train_chargeoffs": 4443
+    },
+    "F": {
+      "lgd": 0.8665470225723588,
+      "n_train_chargeoffs": 2411
+    },
+    "G": {
+      "lgd": 0.8682943459574868,
+      "n_train_chargeoffs": 593
+    }
+  },
+  "test_portfolio": {
+    "lr": {
+      "loans": 1792612,
+      "funded": 27306714925.0,
+      "ecl_12m": 856855996.3725694,
+      "ecl_lifetime": 2009194116.8557444,
+      "ecl_12m_pct_funded": 0.031378948318242984,
+      "ecl_lifetime_pct_funded": 0.0735787560815774
+    },
+    "lgbm": {
+      "loans": 1792612,
+      "funded": 27306714925.0,
+      "ecl_12m": 817094655.1479622,
+      "ecl_lifetime": 1897995065.886734,
+      "ecl_12m_pct_funded": 0.029922847086959223,
+      "ecl_lifetime_pct_funded": 0.06950653240786099
+    }
+  },
+  "matured_test_predicted_vs_realized": {
+    "2015": {
+      "loans": 283171,
+      "funded": 3626437400.0,
+      "realized_loss": 266895667.34,
+      "predicted_loss_lr": 218863916.68103054,
+      "predicted_loss_lgbm": 198439821.88336787,
+      "realized_loss_rate": 0.0735972079,
+      "predicted_loss_rate_lr": 0.0603523217,
+      "predicted_over_realized_lr": 0.82003548,
+      "predicted_loss_rate_lgbm": 0.0547203219,
+      "predicted_over_realized_lgbm": 0.7435108403
+    },
+    "2016": {
+      "loans": 96110,
+      "funded": 1299193600.0,
+      "realized_loss": 105558142.31,
+      "predicted_loss_lr": 78549594.3845201,
+      "predicted_loss_lgbm": 72014372.33861287,
+      "realized_loss_rate": 0.0812489704,
+      "predicted_loss_rate_lr": 0.0604602689,
+      "predicted_over_realized_lr": 0.7441358162,
+      "predicted_loss_rate_lgbm": 0.0554300547,
+      "predicted_over_realized_lgbm": 0.6822247035
+    },
+    "all": {
+      "loans": 379281,
+      "funded": 4925631000.0,
+      "realized_loss": 372453809.65,
+      "predicted_loss_lr": 297413511.0655506,
+      "predicted_loss_lgbm": 270454194.22198075,
+      "realized_loss_rate": 0.075615451,
+      "predicted_loss_rate_lr": 0.0603807941,
+      "predicted_over_realized_lr": 0.7985245509,
+      "predicted_loss_rate_lgbm": 0.0549075224,
+      "predicted_over_realized_lgbm": 0.7261415703
+    }
+  }
+}
