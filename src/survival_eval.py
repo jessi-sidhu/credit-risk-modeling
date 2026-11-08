@@ -169,7 +169,7 @@ def phase1_comparison(t: pd.DataFrame, features: pd.DataFrame) -> dict:
         if p1_file is None:
             continue
         p1_model = joblib.load(ROOT / "reports" / "artifacts" / p1_file)
-        X = features.loc[sub.index.astype(features.index.dtype)]
+        X = features.loc[sub.index]
         p1 = p1_model.predict_proba(X)[:, 1]
         p2 = sub[f"cif_default_36_{p2_name}"].to_numpy()
         reproduced = float(roc_auc_score(y, p1))
@@ -238,6 +238,7 @@ def plot_cif_examples(t: pd.DataFrame, cif: np.ndarray, path) -> dict:
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     t = pd.read_csv(ART / "test_loans.csv.gz", index_col="id")
+    t.index = t.index.astype(str)          # LC ids; features use the same string ids
     meta = json.load(open(ART / "train_meta.json"))
     if meta.get("quick"):
         logger.warning("train_meta.json comes from a --quick run; numbers are not final")
@@ -256,6 +257,7 @@ def main() -> None:
 
     features, _ = load_survival_data()
     features = engineer_features(features)
+    features.index = features.index.astype(str)
     metrics["phase1_comparison"] = phase1_comparison(t, features)
     del features
 
