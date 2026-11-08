@@ -131,7 +131,7 @@ def plot_calibration(by_year: pd.DataFrame, by_grade: pd.DataFrame, path) -> Non
             ax.spines[side].set_visible(False)
         ax.set_ylim(bottom=0)
     axes[0].set_ylabel("cumulative default probability")
-    axes[0].legend(frameon=False, loc="upper left", fontsize=9)
+    axes[0].legend(frameon=False, loc="lower left", fontsize=9)
     fig.suptitle("Phase 2 calibration on the out-of-time test set (loans issued 2015-2018)", x=0.01, ha="left")
     fig.tight_layout()
     fig.savefig(path, dpi=120, facecolor=fig.get_facecolor())
