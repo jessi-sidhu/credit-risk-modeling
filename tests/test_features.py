@@ -134,7 +134,10 @@ def test_last_pymnt_d_read_only_in_survival_data():
     allowed in src/data.py, where it defines the Phase 1 target."""
     from pathlib import Path
     allowed = {"last_pymnt_d": {"survival_data.py"},
-               "loan_status": {"survival_data.py", "data.py"}}
+               "loan_status": {"survival_data.py", "data.py"},
+               # LGD and realized loss only (Phase 2 Step 5)
+               "total_rec_prncp": {"ecl.py"},
+               "recoveries": {"ecl.py"}}
     src = Path(__file__).resolve().parent.parent / "src"
     for col, ok in allowed.items():
         users = {p.name for p in src.glob("*.py") if col in p.read_text()}

@@ -40,6 +40,8 @@ survival-outcomes:
 
 train-survival: survival-outcomes
 	$(PY) -m src.train_survival
+	$(PY) -m src.survival_eval
+	$(PY) -m src.ecl
 
 notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/01_eda.ipynb            --inplace --ExecutePreprocessor.timeout=600
