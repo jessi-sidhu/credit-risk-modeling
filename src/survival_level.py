@@ -132,10 +132,12 @@ def plot_ratios(results: dict, path) -> None:
         ax.set_facecolor("#fcfcfb")
         ax.axhline(1.0, color="#8a8a85", lw=1, ls="--")
         ax.axvspan(1.5, len(labels) - 0.5, color="#e6e6e1", alpha=0.5, lw=0)
-        ax.text(len(labels) - 0.55, 0.02, "outcomes still incomplete",
-                transform=ax.get_xaxis_transform(), ha="right", va="bottom", fontsize=9, color="#3d3d3a")
+        ax.text(len(labels) - 0.55, 0.9, "recent cohorts: outcomes still incomplete",
+                transform=ax.get_xaxis_transform(), ha="right", va="top", fontsize=9, color="#3d3d3a")
         for v in VARIANTS:
-            ratios = [results[model][v]["cells"][k]["ratio"] for k in labels]
+            # observed with Late (31-120 days) counted as default, so recent cohorts
+            # aren't flattered by charge-offs that hadn't been recorded yet
+            ratios = [results[model][v]["cells"][k]["ratio_arrears_as_default"] for k in labels]
             ax.plot(x, ratios, marker=markers[v], markersize=8, lw=2, color=colors[v], label=v,
                     markeredgecolor="#fcfcfb", markeredgewidth=1.5)
         ax.set_xticks(x); ax.set_xticklabels([l.replace("@", "\n") for l in labels])
@@ -143,8 +145,8 @@ def plot_ratios(results: dict, path) -> None:
         ax.grid(color="#e6e6e1", lw=0.8); ax.set_axisbelow(True)
         for side in ("top", "right"):
             ax.spines[side].set_visible(False)
-    axes[0].set_ylabel("predicted / observed cumulative default probability")
-    axes[0].legend(frameon=False, fontsize=9, loc="upper left")
+    axes[0].set_ylabel("predicted / observed P(default)\n(Late 31-120 days counted as default)")
+    axes[1].legend(frameon=False, fontsize=9, loc="lower left")
     fig.suptitle("Level experiments: predicted / observed by issue year and horizon (1.0 = calibrated)",
                  x=0.01, ha="left")
     fig.tight_layout()

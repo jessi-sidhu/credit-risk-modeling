@@ -1,0 +1,455 @@
+{
+  "quick": false,
+  "note": "macro uses the realized unemployment path for test loans (perfect foresight); AUCs are point estimates",
+  "train_until": "2013-12-01",
+  "observed": {
+    "2015@36m": {
+      "observed": 0.17387728356700635,
+      "observed_arrears_as_default": 0.17411122305958848
+    },
+    "2016@36m": {
+      "observed": 0.16364879048064296,
+      "observed_arrears_as_default": 0.17944483351365081
+    },
+    "2016@12m": {
+      "observed": 0.06161475696682813,
+      "observed_arrears_as_default": 0.06161475696682813
+    },
+    "2017@12m": {
+      "observed": 0.05681453203869733,
+      "observed_arrears_as_default": 0.05723313735005023
+    },
+    "2017@24m": {
+      "observed": 0.09737468685287919,
+      "observed_arrears_as_default": 0.12728156993591305
+    },
+    "2018@12m": {
+      "observed": 0.025582721497708794,
+      "observed_arrears_as_default": 0.05376010532348112
+    }
+  },
+  "complete_cells": [
+    "2015@36m",
+    "2016@36m"
+  ],
+  "results": {
+    "lr": {
+      "base": {
+        "cells": {
+          "2015@36m": {
+            "predicted": 0.14329287128144907,
+            "ratio": 0.8241034616015778,
+            "ratio_arrears_as_default": 0.8229961788988639
+          },
+          "2016@36m": {
+            "predicted": 0.14243707991405188,
+            "ratio": 0.8703827232435299,
+            "ratio_arrears_as_default": 0.793765287776961
+          },
+          "2016@12m": {
+            "predicted": 0.04525692095808515,
+            "ratio": 0.7345143141999304,
+            "ratio_arrears_as_default": 0.7345143141999304
+          },
+          "2017@12m": {
+            "predicted": 0.04529928056184375,
+            "ratio": 0.797318554537942,
+            "ratio_arrears_as_default": 0.7914869367510567
+          },
+          "2017@24m": {
+            "predicted": 0.10360944644249809,
+            "ratio": 1.0640285457250183,
+            "ratio_arrears_as_default": 0.8140176656735614
+          },
+          "2018@12m": {
+            "predicted": 0.04288754906341318,
+            "ratio": 1.6764263750146449,
+            "ratio_arrears_as_default": 0.7977579062643863
+          }
+        },
+        "auc_12m": 0.6967075569822999,
+        "auc_36m": 0.6891273270252505,
+        "phase1_population": {
+          "mean_cif36": 0.1216710495068524,
+          "default_rate": 0.1517910311639959,
+          "ratio": 0.8015694245821303
+        },
+        "matured_loss": {
+          "predicted": 297413511.06555057,
+          "realized": 372453809.64999986,
+          "ratio": 0.7985245508564788
+        }
+      },
+      "recalibrated": {
+        "cells": {
+          "2015@36m": {
+            "predicted": 0.15206181883178302,
+            "ratio": 0.8745352797807173,
+            "ratio_arrears_as_default": 0.873360235828915
+          },
+          "2016@36m": {
+            "predicted": 0.15059211167798603,
+            "ratio": 0.9202152440949368,
+            "ratio_arrears_as_default": 0.8392111866878024
+          },
+          "2016@12m": {
+            "predicted": 0.04975647629362068,
+            "ratio": 0.8075415491845296,
+            "ratio_arrears_as_default": 0.8075415491845296
+          },
+          "2017@12m": {
+            "predicted": 0.04978134064670637,
+            "ratio": 0.8762078795755893,
+            "ratio_arrears_as_default": 0.8697992623090525
+          },
+          "2017@24m": {
+            "predicted": 0.11149593879473949,
+            "ratio": 1.1450197417650823,
+            "ratio_arrears_as_default": 0.8759786577968695
+          },
+          "2018@12m": {
+            "predicted": 0.047133786556509814,
+            "ratio": 1.8424070543366995,
+            "ratio_arrears_as_default": 0.8767428239379381
+          }
+        },
+        "auc_12m": 0.6965051784103836,
+        "auc_36m": 0.6888213214997673,
+        "phase1_population": {
+          "mean_cif36": 0.12875684869348653,
+          "default_rate": 0.1517910311639959,
+          "ratio": 0.8482507016793166
+        },
+        "matured_loss": {
+          "predicted": 319588129.17452496,
+          "realized": 372453809.64999986,
+          "ratio": 0.8580611095771754
+        }
+      },
+      "vintage": {
+        "cells": {
+          "2015@36m": {
+            "predicted": 0.10794986987660536,
+            "ratio": 0.620839408472845,
+            "ratio_arrears_as_default": 0.6200052356168918
+          },
+          "2016@36m": {
+            "predicted": 0.10057659781729682,
+            "ratio": 0.6145880914970369,
+            "ratio_arrears_as_default": 0.5604875651638402
+          },
+          "2016@12m": {
+            "predicted": 0.03399000722304492,
+            "ratio": 0.5516536767538384,
+            "ratio_arrears_as_default": 0.5516536767538384
+          },
+          "2017@12m": {
+            "predicted": 0.031777381621073006,
+            "ratio": 0.5593178449384903,
+            "ratio_arrears_as_default": 0.5552269732605375
+          },
+          "2017@24m": {
+            "predicted": 0.0695737192693191,
+            "ratio": 0.7144949218110059,
+            "ratio_arrears_as_default": 0.5466126738093334
+          },
+          "2018@12m": {
+            "predicted": 0.028066264491672183,
+            "ratio": 1.0970789207937013,
+            "ratio_arrears_as_default": 0.5220649089653757
+          }
+        },
+        "auc_12m": 0.6943419546385342,
+        "auc_36m": 0.6854351477013851,
+        "phase1_population": {
+          "mean_cif36": 0.0887042278006009,
+          "default_rate": 0.1517910311639959,
+          "ratio": 0.5843838540418396
+        },
+        "matured_loss": {
+          "predicted": 222675918.65422592,
+          "realized": 372453809.64999986,
+          "ratio": 0.5978618365146476
+        }
+      },
+      "macro": {
+        "cells": {
+          "2015@36m": {
+            "predicted": 0.12482534685234539,
+            "ratio": 0.7178933572667759,
+            "ratio_arrears_as_default": 0.716928780688794
+          },
+          "2016@36m": {
+            "predicted": 0.12271480882109144,
+            "ratio": 0.7498668854237981,
+            "ratio_arrears_as_default": 0.6838581329885779
+          },
+          "2016@12m": {
+            "predicted": 0.04081228931036641,
+            "ratio": 0.6623784839780954,
+            "ratio_arrears_as_default": 0.6623784839780954
+          },
+          "2017@12m": {
+            "predicted": 0.04028776032313897,
+            "ratio": 0.7091101321700283,
+            "ratio_arrears_as_default": 0.7039236740898953
+          },
+          "2017@24m": {
+            "predicted": 0.08949168391672958,
+            "ratio": 0.9190446389002532,
+            "ratio_arrears_as_default": 0.7031000950238838
+          },
+          "2018@12m": {
+            "predicted": 0.03790517360537328,
+            "ratio": 1.4816708851233085,
+            "ratio_arrears_as_default": 0.7050799729147333
+          }
+        },
+        "auc_12m": 0.6964063381248955,
+        "auc_36m": 0.687962253455738,
+        "phase1_population": {
+          "mean_cif36": 0.10459259802213158,
+          "default_rate": 0.1517910311639959,
+          "ratio": 0.6890565089391161
+        },
+        "matured_loss": {
+          "predicted": 258825168.2878585,
+          "realized": 372453809.64999986,
+          "ratio": 0.6949188371333352
+        }
+      }
+    },
+    "lgbm": {
+      "base": {
+        "cells": {
+          "2015@36m": {
+            "predicted": 0.13237836788034715,
+            "ratio": 0.7613321600422465,
+            "ratio_arrears_as_default": 0.760309218177403
+          },
+          "2016@36m": {
+            "predicted": 0.13474575831644506,
+            "ratio": 0.8233837715554845,
+            "ratio_arrears_as_default": 0.7509035266049865
+          },
+          "2016@12m": {
+            "predicted": 0.043454387191013015,
+            "ratio": 0.7052594107351229,
+            "ratio_arrears_as_default": 0.7052594107351229
+          },
+          "2017@12m": {
+            "predicted": 0.04448369444531194,
+            "ratio": 0.7829633167622211,
+            "ratio_arrears_as_default": 0.7772366937223807
+          },
+          "2017@24m": {
+            "predicted": 0.0987215059717205,
+            "ratio": 1.0138313062908864,
+            "ratio_arrears_as_default": 0.7756150872544022
+          },
+          "2018@12m": {
+            "predicted": 0.04297960229621626,
+            "ratio": 1.6800246330346653,
+            "ratio_arrears_as_default": 0.7994702026270735
+          }
+        },
+        "auc_12m": 0.6995510218859196,
+        "auc_36m": 0.6887830925021233,
+        "phase1_population": {
+          "mean_cif36": 0.11347297686523813,
+          "default_rate": 0.1517910311639959,
+          "ratio": 0.7475604849316906
+        },
+        "matured_loss": {
+          "predicted": 270454194.22198075,
+          "realized": 372453809.64999986,
+          "ratio": 0.7261415703497043
+        }
+      },
+      "recalibrated": {
+        "cells": {
+          "2015@36m": {
+            "predicted": 0.14657522557469932,
+            "ratio": 0.8429808803529775,
+            "ratio_arrears_as_default": 0.8418482335543348
+          },
+          "2016@36m": {
+            "predicted": 0.14873278323290978,
+            "ratio": 0.9088535442032644,
+            "ratio_arrears_as_default": 0.8288496264875483
+          },
+          "2016@12m": {
+            "predicted": 0.04976097160824654,
+            "ratio": 0.8076145075933128,
+            "ratio_arrears_as_default": 0.8076145075933128
+          },
+          "2017@12m": {
+            "predicted": 0.05091662962213425,
+            "ratio": 0.8961902491329873,
+            "ratio_arrears_as_default": 0.8896354800666815
+          },
+          "2017@24m": {
+            "predicted": 0.11082089193584364,
+            "ratio": 1.1380872741935486,
+            "ratio_arrears_as_default": 0.8706750866731339
+          },
+          "2018@12m": {
+            "predicted": 0.049180426899894415,
+            "ratio": 1.9224079386666915,
+            "ratio_arrears_as_default": 0.9148126962172001
+          }
+        },
+        "auc_12m": 0.699459129705273,
+        "auc_36m": 0.688662455290395,
+        "phase1_population": {
+          "mean_cif36": 0.1254627230016163,
+          "default_rate": 0.1517910311639959,
+          "ratio": 0.8265489867188902
+        },
+        "matured_loss": {
+          "predicted": 303265957.1730403,
+          "realized": 372453809.64999986,
+          "ratio": 0.8142377640277693
+        }
+      },
+      "vintage": {
+        "cells": {
+          "2015@36m": {
+            "predicted": 0.13102756480247238,
+            "ratio": 0.7535634449452325,
+            "ratio_arrears_as_default": 0.7525509412890001
+          },
+          "2016@36m": {
+            "predicted": 0.1307135158938498,
+            "ratio": 0.7987441612610704,
+            "ratio_arrears_as_default": 0.7284328745185417
+          },
+          "2016@12m": {
+            "predicted": 0.040839416101321135,
+            "ratio": 0.6628187484908538,
+            "ratio_arrears_as_default": 0.6628187484908538
+          },
+          "2017@12m": {
+            "predicted": 0.04155189431805329,
+            "ratio": 0.7313603197462156,
+            "ratio_arrears_as_default": 0.7260111229603391
+          },
+          "2017@24m": {
+            "predicted": 0.09507906947806216,
+            "ratio": 0.9764249062152527,
+            "ratio_arrears_as_default": 0.7469979316403387
+          },
+          "2018@12m": {
+            "predicted": 0.03992474745525303,
+            "ratio": 1.5606137704633465,
+            "ratio_arrears_as_default": 0.7426463771791545
+          }
+        },
+        "auc_12m": 0.7027455822277286,
+        "auc_36m": 0.6910286381799998,
+        "phase1_population": {
+          "mean_cif36": 0.11036705953478711,
+          "default_rate": 0.1517910311639959,
+          "ratio": 0.727098687507735
+        },
+        "matured_loss": {
+          "predicted": 269046764.208214,
+          "realized": 372453809.64999986,
+          "ratio": 0.7223627661670076
+        }
+      },
+      "macro": {
+        "cells": {
+          "2015@36m": {
+            "predicted": 0.13428612909613327,
+            "ratio": 0.7723040430660052,
+            "ratio_arrears_as_default": 0.7712663591489142
+          },
+          "2016@36m": {
+            "predicted": 0.1318912590833488,
+            "ratio": 0.8059409342163726,
+            "ratio_arrears_as_default": 0.7349961350284042
+          },
+          "2016@12m": {
+            "predicted": 0.046236475751196014,
+            "ratio": 0.7504123691681296,
+            "ratio_arrears_as_default": 0.7504123691681296
+          },
+          "2017@12m": {
+            "predicted": 0.04632120150099502,
+            "ratio": 0.8153055184797593,
+            "ratio_arrears_as_default": 0.8093423433645538
+          },
+          "2017@24m": {
+            "predicted": 0.09749970222475017,
+            "ratio": 1.001283859038847,
+            "ratio_arrears_as_default": 0.7660158676062983
+          },
+          "2018@12m": {
+            "predicted": 0.04386864632749339,
+            "ratio": 1.7147763708963606,
+            "ratio_arrears_as_default": 0.8160074475957662
+          }
+        },
+        "auc_12m": 0.6994269458150113,
+        "auc_36m": 0.6899159165733858,
+        "phase1_population": {
+          "mean_cif36": 0.11273889762958211,
+          "default_rate": 0.1517910311639959,
+          "ratio": 0.7427243676062676
+        },
+        "matured_loss": {
+          "predicted": 281140973.60939384,
+          "realized": 372453809.64999986,
+          "ratio": 0.7548344689334391
+        }
+      }
+    }
+  },
+  "fit": {
+    "lr": {
+      "base": {
+        "val_logloss": 0.30237971186140394,
+        "best_iteration": null,
+        "matches_phase2_run": true
+      },
+      "recalibrated": {
+        "offsets_log_odds": {
+          "default": 0.11234518738625797,
+          "prepay": 0.14356050837015139
+        },
+        "val_logloss": 0.30175259220273054
+      },
+      "vintage": {
+        "val_logloss": 0.3022440318384306,
+        "best_iteration": null
+      },
+      "macro": {
+        "val_logloss": 0.3018310259785976,
+        "best_iteration": null
+      }
+    },
+    "lgbm": {
+      "base": {
+        "val_logloss": 0.3014709543803898,
+        "best_iteration": 138,
+        "matches_phase2_run": true
+      },
+      "recalibrated": {
+        "offsets_log_odds": {
+          "default": 0.1536807679449924,
+          "prepay": 0.11770566113479664
+        },
+        "val_logloss": 0.30092164903152924
+      },
+      "vintage": {
+        "val_logloss": 0.3007360232022482,
+        "best_iteration": 250
+      },
+      "macro": {
+        "val_logloss": 0.30078408797631917,
+        "best_iteration": 177
+      }
+    }
+  }
+}
