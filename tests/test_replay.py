@@ -1,5 +1,6 @@
 """Replay helpers (the replay itself needs data/archive/ and runs locally)."""
 import numpy as np
+import pytest
 import pandas as pd
 
 from src.serve.replay import _month_add, outcome_at_12m, to_application
@@ -32,3 +33,15 @@ def test_to_application_builds_a_valid_request():
 
 def test_month_add():
     assert _month_add("2016-01", -12) == "2015-01" and _month_add("2015-12", 1) == "2016-01"
+
+
+def test_calibration_by_year_is_loan_weighted():
+    from src.serve.replay import calibration_by_year
+    by_month = [{"month": "2015-01", "n": 100, "predicted": 0.04, "observed": 0.05},
+                {"month": "2015-02", "n": 300, "predicted": 0.08, "observed": 0.10},
+                {"month": "2016-01", "n": 50, "predicted": 0.05, "observed": 0.05}]
+    out = calibration_by_year(by_month)
+    assert out["2015"]["n"] == 400
+    assert out["2015"]["predicted"] == pytest.approx((4 + 24) / 400)
+    assert out["2015"]["ratio"] == pytest.approx(0.07 / 0.0875)
+    assert out["2016"]["ratio"] == pytest.approx(1.0)

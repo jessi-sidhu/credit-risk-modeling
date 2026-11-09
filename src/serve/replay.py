@@ -79,6 +79,20 @@ def outcome_at_12m(loan_id: str, row: pd.Series) -> dict:
     return {"loan_id": loan_id, "event": "censored", "duration_months": d}       # unknown at 12m
 
 
+def calibration_by_year(by_month: list[dict]) -> dict:
+    """Loan-weighted predicted / observed 12-month default rate per issue year."""
+    df = pd.DataFrame(by_month)
+    if df.empty:
+        return {}
+    df["year"] = df["month"].str[:4]
+    out = {}
+    for y, g in df.groupby("year"):
+        n = g["n"].sum()
+        pred, obs = (g["predicted"] * g["n"]).sum() / n, (g["observed"] * g["n"]).sum() / n
+        out[y] = {"n": int(n), "predicted": float(pred), "observed": float(obs), "ratio": float(pred / obs)}
+    return out
+
+
 def _month_add(month: str, k: int) -> str:
     return str(pd.Period(month, freq="M") + k)
 
@@ -154,6 +168,7 @@ def replay(loans: pd.DataFrame, calibrated: bool) -> dict:
         "first_alerts": first_alert,
         "final_calibration": final["calibration"]["pooled"],
         "final_calibration_by_month": final["calibration"]["by_month"],
+        "final_calibration_by_year": calibration_by_year(final["calibration"]["by_month"]),
         "psi_full_period": final["input_drift"],
         "latency_ms_single_request": {"p50": float(np.percentile(lat, 50)), "p95": float(np.percentile(lat, 95)),
                                       "n": len(lat)},
