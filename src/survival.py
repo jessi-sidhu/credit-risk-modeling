@@ -13,7 +13,9 @@ Reference: Botha & Verster (2025), arXiv 2507.15441.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Sequence
 
 import numpy as np
 import pandas as pd
@@ -114,6 +116,49 @@ def sample_loans(features: pd.DataFrame, outcomes: pd.DataFrame, max_loans: int,
     return features.loc[idx], outcomes.loc[idx]
 
 
+# --- Time-varying features (level experiments) --------------------------------------
+
+UNRATE_PATH = Path(__file__).resolve().parent.parent / "data" / "external" / "UNRATE.csv"
+VINTAGE_ORIGIN = 2007.0
+TIME_FEATURES = ("vintage", "unrate")
+
+
+@lru_cache(maxsize=1)
+def _unrate_by_month() -> tuple[int, np.ndarray]:
+    """(first month index, monthly US unemployment rate) from FRED UNRATE,
+    month index = year * 12 + month - 1."""
+    u = pd.read_csv(UNRATE_PATH, parse_dates=["observation_date"])
+    first = int(u["observation_date"].dt.year.iloc[0] * 12 + u["observation_date"].dt.month.iloc[0] - 1)
+    return first, u["UNRATE"].to_numpy(dtype=float)
+
+
+def time_feature_block(issue_d, period, names: Sequence[str]) -> np.ndarray:
+    """(n, len(names)) values of time features for loan-quarters.
+
+    vintage  years from 2007-01 to the issue month (constant per loan);
+             a linear model can extrapolate it, trees cannot.
+    unrate   US unemployment rate in the first calendar month of the
+             loan-quarter (issue month + 3 * (period - 1)). For test loans
+             this uses the REALIZED path, i.e. perfect foresight: an upper
+             bound on what a macro scenario could add.
+    """
+    issue = pd.DatetimeIndex(issue_d)
+    month = issue.year.to_numpy() * 12 + issue.month.to_numpy() - 1
+    cols = []
+    for name in names:
+        if name == "vintage":
+            cols.append(month / 12.0 - VINTAGE_ORIGIN)
+        elif name == "unrate":
+            first, series = _unrate_by_month()
+            idx = month + PERIOD_MONTHS * (np.asarray(period) - 1) - first
+            if (idx < 0).any() or (idx >= len(series)).any():
+                raise ValueError("unemployment series does not cover all loan-quarters")
+            cols.append(series[idx])
+        else:
+            raise ValueError(f"unknown time feature {name!r}")
+    return np.column_stack(cols).astype(np.float32) if cols else np.zeros((len(month), 0), np.float32)
+
+
 # --- Hazard models ---------------------------------------------------------------
 
 _PERIOD_CATS = [(t, p) for t in TERMS for p in range(1, N_PERIODS[t] + 1)]
@@ -131,13 +176,15 @@ class HazardModel:
     Numeric features are capped at training quantiles (CLIP_QUANTILES,
     infinities become missing), then the Phase 1 preprocessor (impute,
     scale for LR, one-hot) is fit on the training rows; the period block
-    is appended after it.
+    is appended after it, then any `time_features` (standardized on the
+    training rows; see time_feature_block).
     """
 
-    def __init__(self, kind: str, **params: Any):
+    def __init__(self, kind: str, time_features: Sequence[str] = (), **params: Any):
         if kind not in ("lr", "lgbm"):
             raise ValueError(kind)
         self.kind, self.params = kind, params
+        self.time_features = tuple(time_features)
         self.pre = make_preprocessor(scale_numeric=(kind == "lr"))
         self.best_iteration_: int | None = None
 
@@ -162,13 +209,24 @@ class HazardModel:
             X[c] = X[c].replace([np.inf, -np.inf], np.nan).clip(lo, hi)
         return X
 
+    def _time_block(self, issue_d, period) -> np.ndarray:
+        if not self.time_features:
+            return np.zeros((len(period), 0), np.float32)
+        T = time_feature_block(issue_d, period, self.time_features)
+        return ((T - self.time_mean_) / self.time_std_).astype(np.float32)
+
     def _design(self, pp: pd.DataFrame) -> np.ndarray:
         base = self.pre.transform(self._clip(pp)).astype(np.float32)
-        return np.hstack([base, self._period_block(pp["period"].to_numpy(), pp["term"].to_numpy())])
+        period = pp["period"].to_numpy()
+        return np.hstack([base, self._period_block(period, pp["term"].to_numpy()),
+                          self._time_block(pp["issue_d"].to_numpy(), period)])
 
     def fit(self, pp: pd.DataFrame, eval_pp: pd.DataFrame | None = None) -> "HazardModel":
         self._fit_clip(pp)
         self.pre.fit(self._clip(pp))
+        if self.time_features:
+            T = time_feature_block(pp["issue_d"].to_numpy(), pp["period"].to_numpy(), self.time_features)
+            self.time_mean_, self.time_std_ = T.mean(axis=0), T.std(axis=0) + 1e-9
         Z, y = self._design(pp), pp["y"].to_numpy()
         if self.kind == "lr":
             self.clf = LogisticRegression(max_iter=1000, random_state=RANDOM_STATE, **self.params)
@@ -198,6 +256,7 @@ class HazardModel:
         n = len(loans)
         out = np.full((n, MAX_PERIODS, 3), np.nan, dtype=np.float32)
         terms = loans["term"].to_numpy()
+        issue = loans["issue_d"].to_numpy()
         for lo in range(0, n, chunk):
             sl = slice(lo, min(lo + chunk, n))
             base = self.pre.transform(self._clip(loans.iloc[sl])).astype(np.float32)
@@ -206,10 +265,42 @@ class HazardModel:
                 m = t_chunk // PERIOD_MONTHS >= p
                 if not m.any():
                     continue
-                Z = np.hstack([base[m], self._period_block(np.full(m.sum(), p), t_chunk[m])])
+                per = np.full(m.sum(), p)
+                Z = np.hstack([base[m], self._period_block(per, t_chunk[m]),
+                               self._time_block(issue[sl][m], per)])
                 rows = np.flatnonzero(m) + lo
                 out[rows, p - 1] = self.clf.predict_proba(Z)
         return out
+
+
+# --- Level recalibration ---------------------------------------------------------
+
+def fit_level_offsets(probs: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """Log-odds shifts (c_default, c_prepay) that maximize the likelihood of
+    `y` (0/1/2) when added to the logits of `probs` (rows of
+    [no event, default, prepay]). Fit on validation rows: it moves the level
+    of each hazard without changing which loans rank riskier."""
+    from scipy.optimize import minimize
+
+    logp = np.log(np.clip(probs, 1e-12, 1.0)).astype(np.float64)
+    y = np.asarray(y, dtype=int)
+
+    def nll(c):
+        z = logp + np.r_[0.0, c]
+        z -= z.max(axis=1, keepdims=True)
+        lse = np.log(np.exp(z).sum(axis=1))
+        return -(z[np.arange(len(y)), y] - lse).mean()
+
+    return minimize(nll, x0=np.zeros(2), method="Nelder-Mead",
+                    options={"xatol": 1e-5, "fatol": 1e-9}).x
+
+
+def apply_level_offsets(h: np.ndarray, offsets) -> np.ndarray:
+    """Apply `fit_level_offsets` shifts to (..., 3) hazards; NaN stays NaN."""
+    shift = np.r_[0.0, np.asarray(offsets, float)]
+    z = np.log(np.clip(h, 1e-12, 1.0)) + shift
+    z = np.exp(z - np.nanmax(z, axis=-1, keepdims=True))
+    return (z / z.sum(axis=-1, keepdims=True)).astype(h.dtype)
 
 
 # --- Hazards -> curves -------------------------------------------------------------

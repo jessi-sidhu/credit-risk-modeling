@@ -151,3 +151,54 @@ def test_extreme_and_infinite_inputs_do_not_saturate_lr_hazards():
     first = h[:, 0, :]
     assert np.isfinite(first).all()
     assert (first[:, 1] < 0.9).all() and (first[:, 1] > 1e-4).all()
+
+
+# --- level experiments ----------------------------------------------------------
+
+from src.survival import apply_level_offsets, fit_level_offsets, time_feature_block
+
+
+def test_time_feature_block_vintage_and_unrate():
+    issue = pd.to_datetime(["2015-01-01", "2015-01-01", "2009-07-01"]).to_numpy()
+    T = time_feature_block(issue, np.array([1, 2, 1]), ["vintage", "unrate"])
+    assert T[:, 0].tolist() == pytest.approx([8.0, 8.0, 2.5])
+    # FRED UNRATE: 2015-01 = 5.7, 2015-04 = 5.4 (quarter 2 starts 3 months after issue)
+    assert T[:2, 1].tolist() == pytest.approx([5.7, 5.4])
+
+
+def test_time_feature_block_rejects_months_outside_series():
+    with pytest.raises(ValueError):
+        time_feature_block(pd.to_datetime(["2030-01-01"]).to_numpy(), np.array([1]), ["unrate"])
+
+
+@pytest.mark.parametrize("kind", ["lr", "lgbm"])
+def test_hazard_model_with_time_features_row_and_loan_paths_agree(kind):
+    rng = np.random.default_rng(3)
+    n = 300
+    terms = rng.choice([36, 60], n).tolist()
+    ev = rng.choice([C, D, P], n, p=[0.5, 0.2, 0.3])
+    dur = [int(rng.integers(1, t + 1)) for t in terms]
+    f, o = _loans(dur, ev.tolist(), terms=terms, seed=3)
+    f["issue_d"] = pd.to_datetime(rng.choice(pd.date_range("2010-01-01", "2013-12-01", freq="MS"), n))
+    pp = expand_person_period(f, o)
+    params = {"n_estimators": 15} if kind == "lgbm" else {}
+    m = HazardModel(kind, time_features=("vintage", "unrate"), **params).fit(pp)
+    h = m.hazards(f, chunk=100)
+    q3 = pp[pp["period"] == 3].reset_index(drop=True)
+    pos = [f.index.get_loc(i) for i in q3["loan_id"]]
+    assert np.allclose(h[pos, 2], m.predict_rows(q3), atol=1e-5)
+
+
+def test_level_offsets_recover_a_known_shift_and_apply_cleanly():
+    rng = np.random.default_rng(4)
+    n = 200_000
+    true = np.column_stack([np.full(n, 0.90), np.full(n, 0.04), np.full(n, 0.06)])
+    y = np.array([rng.choice(3, p=row) for row in true[:2000]] * 100)        # sample labels
+    model = np.column_stack([np.full(n, 0.93), np.full(n, 0.02), np.full(n, 0.05)])  # too low
+    c = fit_level_offsets(model, y)
+    adj = apply_level_offsets(model[:1], c)[0]
+    emp = np.bincount(y, minlength=3) / len(y)
+    assert adj == pytest.approx(emp, abs=2e-3)
+    h = np.full((2, 3, 3), np.nan); h[:, :2] = [0.9, 0.04, 0.06]
+    out = apply_level_offsets(h, [0.0, 0.0])
+    assert np.allclose(out[:, :2], h[:, :2]) and np.isnan(out[:, 2]).all()
