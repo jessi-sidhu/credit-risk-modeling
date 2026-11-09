@@ -1,4 +1,4 @@
-.PHONY: help install test smoke train train-random survival-outcomes train-survival export-model serve notebooks all clean clean-all verify
+.PHONY: help install test smoke train train-random survival-outcomes train-survival export-model serve monitor-report notebooks all clean clean-all verify
 
 PY := .venv/bin/python
 JUPYTER := .venv/bin/jupyter
@@ -14,6 +14,7 @@ help:
 	@echo "  train-survival  Phase 2: outcomes, hazard models, evaluation, expected loss"
 	@echo "  export-model    Phase 3: write the model bundle to models/pd_survival_v1/"
 	@echo "  serve           Phase 3: run the scoring API on http://localhost:8000 (docs at /docs)"
+	@echo "  monitor-report  Phase 3: drift + calibration report from the prediction log (reports/monitoring/)"
 	@echo "  notebooks   execute all notebooks in order, in-place"
 	@echo "  all         install -> test -> train -> notebooks"
 	@echo "  verify      wipe generated artifacts, then run all (full reproduce)"
@@ -51,6 +52,9 @@ export-model:
 
 serve:
 	$(PY) -m uvicorn src.serve.app:app --reload --port 8000
+
+monitor-report:
+	$(PY) -m src.serve.monitoring
 
 notebooks:
 	$(JUPYTER) nbconvert --to notebook --execute notebooks/01_eda.ipynb            --inplace --ExecutePreprocessor.timeout=600

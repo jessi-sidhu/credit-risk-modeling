@@ -5,6 +5,7 @@
 POST /v1/score          one application -> default curve, PD, ECL, reasons
 POST /v1/score/batch    up to MAX_BATCH applications
 POST /v1/outcomes       record outcomes for previously scored loans (labels arrive later)
+GET  /v1/monitoring     input drift (PSI), score drift and calibration from the logs
 GET  /health            liveness and whether the model loaded
 GET  /v1/model          the bundle's model card
 
@@ -31,6 +32,7 @@ from pydantic import BaseModel, Field
 from .bundle import ModelBundle, load_bundle
 from .db import init_db, make_engine
 from .logging import log_predictions, record_outcomes
+from .monitoring import monitoring_summary
 from .scoring import LoanApplication, score_many
 
 logger = logging.getLogger("src.serve")
@@ -182,6 +184,17 @@ def outcomes(request: Request, body: OutcomesRequest):
         raise HTTPException(status_code=503, detail=f"database unavailable: {state.db_error}")
     counts = record_outcomes(state.Session, [o.model_dump() for o in body.outcomes])
     return {"request_id": request.state.request_id, **counts}
+
+
+@app.get("/v1/monitoring")
+def monitoring(request: Request,
+               month_from: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}$", description="YYYY-MM"),
+               month_to: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}$", description="YYYY-MM"),
+               calibrated: Optional[bool] = Query(None, description="only raw or only calibrated predictions")):
+    if state.Session is None:
+        raise HTTPException(status_code=503, detail=f"database unavailable: {state.db_error}")
+    return {"request_id": request.state.request_id,
+            **monitoring_summary(state.Session, _bundle(), month_from, month_to, calibrated)}
 
 
 @app.get("/health")
