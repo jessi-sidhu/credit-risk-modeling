@@ -1,0 +1,14 @@
+# Serving image only. Versions match the environment the model bundle was
+# trained and pickled in (scikit-learn and LightGBM must match to unpickle).
+fastapi==0.128.8
+uvicorn==0.39.0
+pydantic==2.13.5
+sqlalchemy==2.0.57
+psycopg[binary]>=3.1,<4
+lightgbm==4.6.0
+scikit-learn==1.5.2
+scipy==1.13.1
+pandas==2.2.3
+numpy==1.26.4
+shap==0.49.1
+joblib==1.5.3

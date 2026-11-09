@@ -8,7 +8,7 @@ Credit risk models for Lending Club loans, validated out of time, with logistic 
 ![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.5-orange.svg)
 ![LightGBM](https://img.shields.io/badge/LightGBM-4.6-green.svg)
-![tests](https://img.shields.io/badge/tests-129%20passing-brightgreen.svg)
+[![CI](https://github.com/jessi-sidhu/credit-risk-modeling/actions/workflows/ci.yml/badge.svg)](https://github.com/jessi-sidhu/credit-risk-modeling/actions/workflows/ci.yml)
 
 ## Results
 
