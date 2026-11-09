@@ -106,7 +106,10 @@ def calibration_table(t: pd.DataFrame, by: pd.Series, horizons) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def plot_calibration(by_year: pd.DataFrame, by_grade: pd.DataFrame, path) -> None:
+def plot_calibration(by_year: pd.DataFrame, by_grade: pd.DataFrame, path,
+                     by_year_alt: pd.DataFrame | None = None) -> None:
+    """`by_year_alt`: the same table with Late (31-120 days) loans counted as
+    defaults; drawn as a second, dashed "observed" line on the year panels."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -124,6 +127,11 @@ def plot_calibration(by_year: pd.DataFrame, by_grade: pd.DataFrame, path) -> Non
         for key, col in (("observed", "observed"), ("lr", "pred_lr"), ("lgbm", "pred_lgbm")):
             ax.plot(x, d[col], marker=markers[key], markersize=8, lw=2 if key != "observed" else 1.5,
                     color=colors[key], label=labels[key], markeredgecolor="#fcfcfb", markeredgewidth=1.5)
+        if by_year_alt is not None and tbl is by_year:
+            alt = by_year_alt[by_year_alt["horizon"] == h].set_index("group")["observed"]
+            ax.plot(x, alt.reindex(d["group"]).to_numpy(), marker="s", markersize=7, lw=1.5, ls="--",
+                    color="#8a8a85", markerfacecolor="#fcfcfb",
+                    label="observed, Late (31-120) counted as default")
         ax.set_xticks(x); ax.set_xticklabels(d["group"])
         ax.set_title(f"P(default) {title}", loc="left")
         ax.set_facecolor("#fcfcfb"); ax.grid(color="#e6e6e1", lw=0.8); ax.set_axisbelow(True)
@@ -253,7 +261,21 @@ def main() -> None:
     metrics["calibration_by_grade"] = by_grade.to_dict(orient="records")
     recent = by_year[by_year["group"].astype(int).isin(RECENT_YEARS) & by_year["observed"].notna()]
     metrics["recent_cohorts_2016_2018"] = recent.to_dict(orient="records")
-    plot_calibration(by_year, by_grade, FIG / "survival_calibration.png")
+
+    # Sensitivity: Late (31-120 days) loans at the snapshot counted as defaults
+    _, alt = load_survival_data(arrears_as_default=True)
+    alt.index = alt.index.astype(str)
+    t_alt = t.copy()
+    t_alt[["duration", "event", "finished"]] = alt.loc[t.index, ["duration", "event", "finished"]].to_numpy()
+    t_alt = t_alt.astype({"duration": int, "event": int, "finished": bool})
+    del alt
+    by_year_alt = calibration_table(t_alt, year, horizons=(12, 24, 36))
+    metrics["calibration_by_issue_year_arrears_as_default"] = by_year_alt.to_dict(orient="records")
+    metrics["n_test_events_arrears_as_default"] = {
+        "default": int((t_alt["event"] == EVENT_DEFAULT).sum()),
+        "default_standard": int((t["event"] == EVENT_DEFAULT).sum()),
+    }
+    plot_calibration(by_year, by_grade, FIG / "survival_calibration.png", by_year_alt=by_year_alt)
 
     features, _ = load_survival_data()
     features = engineer_features(features)

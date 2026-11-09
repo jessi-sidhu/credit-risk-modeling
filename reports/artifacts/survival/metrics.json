@@ -409,6 +409,132 @@
       "ratio_lgbm": 1.6800246331255055
     }
   ],
+  "calibration_by_issue_year_arrears_as_default": [
+    {
+      "group": "2015",
+      "horizon": 12,
+      "loans": 421093,
+      "observed": 0.0542303006699233,
+      "pred_lr": 0.04412525270835943,
+      "ratio_lr": 0.8136641723034327,
+      "pred_lgbm": 0.04112430920380533,
+      "ratio_lgbm": 0.7583271472919071
+    },
+    {
+      "group": "2015",
+      "horizon": 24,
+      "loans": 421093,
+      "observed": 0.12888364328070048,
+      "pred_lr": 0.10281746558256966,
+      "ratio_lr": 0.7977541832724241,
+      "pred_lgbm": 0.09476776628113952,
+      "ratio_lgbm": 0.7352970778048327
+    },
+    {
+      "group": "2015",
+      "horizon": 36,
+      "loans": 421093,
+      "observed": 0.17411122305958848,
+      "pred_lr": 0.1432928712945941,
+      "ratio_lr": 0.8229961789743616,
+      "pred_lgbm": 0.13237836787436857,
+      "ratio_lgbm": 0.7603092181430654
+    },
+    {
+      "group": "2016",
+      "horizon": 12,
+      "loans": 434344,
+      "observed": 0.06161475696682813,
+      "pred_lr": 0.045256920959887106,
+      "ratio_lr": 0.7345143142291759,
+      "pred_lgbm": 0.04345438718946364,
+      "ratio_lgbm": 0.7052594107099768
+    },
+    {
+      "group": "2016",
+      "horizon": 24,
+      "loans": 434344,
+      "observed": 0.1328532223306872,
+      "pred_lr": 0.10382519940813965,
+      "ratio_lr": 0.7815030571837136,
+      "pred_lgbm": 0.09797440034790351,
+      "ratio_lgbm": 0.7374634851086546
+    },
+    {
+      "group": "2016",
+      "horizon": 36,
+      "loans": 434344,
+      "observed": 0.17944483351365081,
+      "pred_lr": 0.14243707992611615,
+      "ratio_lr": 0.793765287844192,
+      "pred_lgbm": 0.13474575831047392,
+      "ratio_lgbm": 0.7509035265717108
+    },
+    {
+      "group": "2017",
+      "horizon": 12,
+      "loans": 443065,
+      "observed": 0.05723313735005023,
+      "pred_lr": 0.04529928056080101,
+      "ratio_lr": 0.7914869367328375,
+      "pred_lgbm": 0.044483694442705696,
+      "ratio_lgbm": 0.7772366936768434
+    },
+    {
+      "group": "2017",
+      "horizon": 24,
+      "loans": 443065,
+      "observed": 0.12728156993591305,
+      "pred_lr": 0.10360944645385893,
+      "ratio_lr": 0.8140176657628189,
+      "pred_lgbm": 0.09872150597463866,
+      "ratio_lgbm": 0.7756150872773291
+    },
+    {
+      "group": "2017",
+      "horizon": 36,
+      "loans": 443065,
+      "observed": NaN,
+      "pred_lr": 0.14187203593275932,
+      "ratio_lr": NaN,
+      "pred_lgbm": 0.13523326417560855,
+      "ratio_lgbm": NaN
+    },
+    {
+      "group": "2018",
+      "horizon": 12,
+      "loans": 494110,
+      "observed": 0.05376010532348112,
+      "pred_lr": 0.04288754906646153,
+      "ratio_lr": 0.797757906321089,
+      "pred_lgbm": 0.0429796022985402,
+      "ratio_lgbm": 0.7994702026703013
+    },
+    {
+      "group": "2018",
+      "horizon": 24,
+      "loans": 494110,
+      "observed": NaN,
+      "pred_lr": 0.09830260825128513,
+      "ratio_lr": NaN,
+      "pred_lgbm": 0.09469771989309488,
+      "ratio_lgbm": NaN
+    },
+    {
+      "group": "2018",
+      "horizon": 36,
+      "loans": 494110,
+      "observed": NaN,
+      "pred_lr": 0.1349198727427597,
+      "ratio_lr": NaN,
+      "pred_lgbm": 0.12962384087579185,
+      "ratio_lgbm": NaN
+    }
+  ],
+  "n_test_events_arrears_as_default": {
+    "default": 213134,
+    "default_standard": 192028
+  },
   "phase1_comparison": {
     "n_loans": 372802,
     "default_rate": 0.1517910311639959,
