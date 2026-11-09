@@ -1,0 +1,192 @@
+{
+  "fields": {
+    "loan_amount": {
+      "dtype": "float",
+      "valid": [
+        1,
+        1000000
+      ],
+      "label": "Loan amount",
+      "training_cap": [
+        1000.0,
+        35000.0
+      ]
+    },
+    "term": {
+      "dtype": "int",
+      "allowed": [
+        36,
+        60
+      ],
+      "label": "Loan term",
+      "training_cap": [
+        36.0,
+        60.0
+      ]
+    },
+    "int_rate": {
+      "dtype": "float",
+      "valid": [
+        0,
+        100
+      ],
+      "label": "Interest rate",
+      "training_cap": [
+        5.420000076293945,
+        25.889999389648438
+      ]
+    },
+    "grade": {
+      "dtype": "category",
+      "label": "LC grade",
+      "allowed": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ]
+    },
+    "emp_length": {
+      "dtype": "int",
+      "valid": [
+        0,
+        10
+      ],
+      "label": "Years employed",
+      "training_cap": [
+        0.0,
+        10.0
+      ]
+    },
+    "home_ownership": {
+      "dtype": "category",
+      "label": "Home ownership",
+      "allowed": [
+        "MORTGAGE",
+        "NONE",
+        "OTHER",
+        "OWN",
+        "RENT"
+      ]
+    },
+    "annual_income": {
+      "dtype": "float",
+      "valid": [
+        0,
+        1000000000.0
+      ],
+      "label": "Annual income",
+      "training_cap": [
+        10000.0,
+        500000.0
+      ]
+    },
+    "purpose": {
+      "dtype": "category",
+      "label": "Loan purpose",
+      "allowed": [
+        "car",
+        "credit_card",
+        "debt_consolidation",
+        "educational",
+        "home_improvement",
+        "house",
+        "major_purchase",
+        "medical",
+        "moving",
+        "other",
+        "renewable_energy",
+        "small_business",
+        "vacation",
+        "wedding"
+      ]
+    },
+    "dti": {
+      "dtype": "float",
+      "valid": [
+        -1,
+        1000
+      ],
+      "label": "Debt-to-income ratio",
+      "training_cap": [
+        0.0,
+        34.810001373291016
+      ]
+    },
+    "fico": {
+      "dtype": "float",
+      "valid": [
+        300,
+        850
+      ],
+      "label": "FICO score",
+      "training_cap": [
+        652.0,
+        827.0
+      ]
+    },
+    "open_acc": {
+      "dtype": "float",
+      "valid": [
+        0,
+        200
+      ],
+      "label": "Open credit lines",
+      "nullable": true,
+      "training_cap": [
+        2.0,
+        32.0
+      ]
+    },
+    "revol_util": {
+      "dtype": "float",
+      "valid": [
+        0,
+        1000
+      ],
+      "label": "Revolving utilization",
+      "nullable": true,
+      "training_cap": [
+        0.0,
+        100.30000305175781
+      ]
+    }
+  },
+  "engineered": {
+    "loan_to_income": {
+      "label": "Loan amount relative to income",
+      "training_cap": [
+        0.013333333656191826,
+        0.5687839217782094
+      ]
+    },
+    "installment_estimate": {
+      "label": "Monthly installment",
+      "training_cap": [
+        31.940393447875977,
+        1304.2947998046875
+      ]
+    },
+    "installment_to_income": {
+      "label": "Installment relative to income",
+      "training_cap": [
+        0.005194244906306267,
+        0.21206532418727875
+      ]
+    },
+    "emp_x_homeowner": {
+      "label": "Years employed (homeowners)",
+      "training_cap": [
+        0.0,
+        10.0
+      ]
+    }
+  },
+  "optional": {
+    "issue_d": "issue month (YYYY-MM), used for monitoring only",
+    "loan_id": "client-supplied id, used to match outcomes later"
+  }
+}

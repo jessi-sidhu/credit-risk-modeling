@@ -1,0 +1,76 @@
+{
+  "model_version": "pd_survival_v1",
+  "created_at": "2026-11-09T22:56:01+00:00",
+  "git_commit": "f7c70e364dce960649e20c211f629a5b520559fd",
+  "model": "Discrete-time competing-risks hazard model (LightGBM multiclass: no event / default / prepay per quarter)",
+  "training_window": {
+    "train": [
+      "2007-06",
+      "2013-12"
+    ],
+    "val": [
+      "2014-01",
+      "2014-12"
+    ]
+  },
+  "training_loans": 230712,
+  "lgbm_params": {
+    "feature_fraction": 0.8,
+    "learning_rate": 0.10544567419342876,
+    "min_child_samples": 343,
+    "num_leaves": 16,
+    "reg_lambda": 0.005337032762603957,
+    "n_estimators": 138
+  },
+  "validation_logloss": 0.3014709543803898,
+  "test": {
+    "issue_range": [
+      "2015-01",
+      "2018-12"
+    ],
+    "loans": 1792612,
+    "auc_default_by_horizon": {
+      "12m": {
+        "estimate": 0.6995510217004235,
+        "ci_low": 0.6977373502554043,
+        "ci_high": 0.7013462020585192
+      },
+      "24m": {
+        "estimate": 0.689792832121491,
+        "ci_low": 0.6883261755900573,
+        "ci_high": 0.6911150157934526
+      },
+      "36m": {
+        "estimate": 0.6887830925927105,
+        "ci_low": 0.6874563385488258,
+        "ci_high": 0.6900646144840266
+      }
+    }
+  },
+  "known_under_prediction": {
+    "description": "Predicted / observed cumulative default probability on 2015-2018 cohorts, observed with Late (31-120 days) counted as default. 1.0 = calibrated.",
+    "raw": {
+      "2015@36m": 0.760309218177403,
+      "2016@36m": 0.7509035266049865,
+      "2016@12m": 0.7052594107351229,
+      "2017@12m": 0.7772366937223807,
+      "2017@24m": 0.7756150872544022,
+      "2018@12m": 0.7994702026270735
+    },
+    "calibrated": {
+      "2015@36m": 0.8418482335543348,
+      "2016@36m": 0.8288496264875483,
+      "2016@12m": 0.8076145075933128,
+      "2017@12m": 0.8896354800666815,
+      "2017@24m": 0.8706750866731339,
+      "2018@12m": 0.9148126962172001
+    },
+    "matured_loss_predicted_over_realized": {
+      "raw": 0.7261415703497043,
+      "calibrated": 0.8142377640277693
+    }
+  },
+  "calibration": "level offsets fit on the 2014 validation loans (level_offsets.json); applied by default",
+  "lgd": "Illustration only: no macro scenarios, no staging rules, LGD is a grade average.",
+  "intended_use": "Portfolio illustration. Not a regulatory model and not for credit decisions."
+}

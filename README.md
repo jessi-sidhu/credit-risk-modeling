@@ -299,4 +299,4 @@ Expected loss inherits the PD shortfall: the model would have provisioned about 
 
 ## License
 
-Personal portfolio project. Code can be referenced; please don't redistribute the trained artifacts.
+Personal portfolio project. Code can be referenced. The model bundle in `models/pd_survival_v1/` is committed so the API can run anywhere; it holds the fitted model and summary statistics only, no loan records. It is an illustration, not a credit-decision model.

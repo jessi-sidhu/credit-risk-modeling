@@ -1,0 +1,5 @@
+{
+  "default": 0.1536807679449924,
+  "prepay": 0.11770566113479664,
+  "source": "level_experiments.json: log-odds shifts fit on 2014 validation loan-quarters"
+}
