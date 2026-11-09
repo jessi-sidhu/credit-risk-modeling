@@ -14,12 +14,19 @@ Every scored application is logged to the database in DATABASE_URL
 
 The model bundle is loaded once at startup. Every response carries a
 `request_id` (also in the X-Request-ID header).
+
+Public deployment settings (environment variables):
+    RATE_LIMIT_PER_MINUTE   requests per client IP per minute on /v1/*; 0 = off (default)
+    MAX_BATCH               maximum applications per batch request (default 1000)
 """
 from __future__ import annotations
 
 import logging
+import os
+import threading
 import time
 import uuid
+from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Literal, Optional
@@ -37,7 +44,32 @@ from .scoring import LoanApplication, score_many
 
 logger = logging.getLogger("src.serve")
 
-MAX_BATCH = 1_000
+MAX_BATCH = int(os.environ.get("MAX_BATCH", 1_000))
+RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", 0))
+
+
+class RateLimiter:
+    """Sliding one-minute window per client IP (in memory, per process)."""
+
+    def __init__(self, per_minute: int):
+        self.per_minute = per_minute
+        self.hits: dict[str, deque] = defaultdict(deque)
+        self.lock = threading.Lock()
+
+    def retry_after(self, key: str, now: float | None = None) -> float:
+        """0 if the request is allowed (and counts it), else seconds to wait."""
+        now = time.monotonic() if now is None else now
+        with self.lock:
+            q = self.hits[key]
+            while q and now - q[0] >= 60:
+                q.popleft()
+            if len(q) >= self.per_minute:
+                return 60 - (now - q[0])
+            q.append(now)
+            return 0.0
+
+
+rate_limiter = RateLimiter(RATE_LIMIT_PER_MINUTE) if RATE_LIMIT_PER_MINUTE > 0 else None
 
 
 class ReasonCode(BaseModel):
@@ -121,10 +153,22 @@ app = FastAPI(title="Credit risk scoring", version="1.0", lifespan=lifespan,
                           "(Phase 2 competing-risks hazard model). Illustration only, not for credit decisions.")
 
 
+def _client_ip(request: Request) -> str:
+    fwd = request.headers.get("x-forwarded-for")      # behind the host's proxy
+    return fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "unknown")
+
+
 @app.middleware("http")
 async def add_request_id(request: Request, call_next):
     request.state.request_id = str(uuid.uuid4())
     request.state.started = time.perf_counter()
+    if rate_limiter is not None and request.url.path.startswith("/v1/"):
+        wait = rate_limiter.retry_after(_client_ip(request))
+        if wait > 0:
+            return JSONResponse(status_code=429, headers={"Retry-After": str(int(wait) + 1),
+                                                          "X-Request-ID": request.state.request_id},
+                                content={"request_id": request.state.request_id,
+                                         "error": f"rate limit: {rate_limiter.per_minute} requests per minute"})
     response = await call_next(request)
     response.headers["X-Request-ID"] = request.state.request_id
     return response

@@ -86,3 +86,22 @@ def test_missing_required_field(client):
     body = {k: v for k, v in APP.items() if k != "fico"}
     r = client.post("/v1/score", json=body)
     assert r.status_code == 422 and any(d["field"] == "fico" for d in r.json()["details"])
+
+
+def test_rate_limiter_window():
+    from src.serve.app import RateLimiter
+    rl = RateLimiter(per_minute=3)
+    assert [rl.retry_after("ip", now=t) for t in (0, 1, 2)] == [0, 0, 0]
+    assert rl.retry_after("ip", now=3) == pytest.approx(57)
+    assert rl.retry_after("other-ip", now=3) == 0
+    assert rl.retry_after("ip", now=60.5) == 0                 # first hit expired
+
+
+def test_rate_limit_returns_429(client, monkeypatch):
+    import src.serve.app as app_module
+    monkeypatch.setattr(app_module, "rate_limiter", app_module.RateLimiter(per_minute=2))
+    codes = [client.post("/v1/score", json=APP).status_code for _ in range(3)]
+    assert codes == [200, 200, 429]
+    r = client.post("/v1/score", json=APP)
+    assert r.status_code == 429 and "Retry-After" in r.headers and r.json()["request_id"]
+    assert client.get("/health").status_code == 200            # health is never limited
