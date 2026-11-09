@@ -245,7 +245,9 @@ Training on 230,712 loans instead of Phase 1's 175,422 (both terms, unfinished l
 
 For 2015–2016, where the outcomes are complete, both models still predict only 71–87% of the defaults that happened (ratios across both models and all horizons), the same gap as Phase 1. The model learns default *levels* from 2007–2013 and has no way to know that later cohorts were riskier at the same features (notebook 05: LC cut interest rates while risk rose).
 
-The apparent over-prediction for 2017 (24 months) and 2018 (12 months) should not be read as the problem going away. A loan that stops paying is reported as Late for several months before it is charged off; for loans issued in 2017–18, many of those defaults had not been charged off by the March 2019 snapshot, so they are censored here and the observed default rate for those cohorts is understated. At the snapshot, 11,719 of the 2018 loans were in arrears (Late or In Grace) against only 8,853 recorded defaults; for 2017 it was 12,393 in arrears against 39,133 defaults, and for 2015 only 2,250 against 75,803 (`outcomes_summary.json`).
+The apparent over-prediction for 2017 (24 months) and 2018 (12 months) is a recording lag, not the problem going away. A loan that stops paying is reported as Late for several months before it is charged off; for loans issued in 2017–18, many of those defaults had not been charged off by the March 2019 snapshot, so they are censored here and the observed default rate for those cohorts is understated. At the snapshot, 11,719 of the 2018 loans were in arrears (Late or In Grace) against only 8,853 recorded defaults; for 2017 it was 12,393 in arrears against 39,133 defaults, and for 2015 only 2,250 against 75,803 (`outcomes_summary.json`).
+
+Counting Late (31–120 days) loans at the snapshot as defaults (the `arrears_as_default` option; results in `metrics.json`) settles it. The 2018 observed 12-month rate rises from 0.0256 to 0.0538 and LightGBM's ratio falls from 1.68 to 0.80; 2017 at 24 months goes from 1.01 to 0.78. Even 2016 at 36 months moves (observed 0.1636 → 0.1794, ratio 0.82 → 0.75), because some 2016 loans were still in arrears at the snapshot. With arrears counted, LightGBM predicts 0.71–0.80 of the observed defaults in every cohort and horizon: the under-prediction is uniform. The dashed line in the figure is this adjusted observed rate.
 
 By grade (36 months), the models under-predict most for the riskiest loans (E–G: observed 0.3432, LightGBM 0.2811) and are close for A–B.
 
@@ -271,6 +273,38 @@ By grade:
 | C | 36 | 0.1752 | 0.1570 | 0.1512 |
 | D | 36 | 0.2492 | 0.2235 | 0.2199 |
 | E–G | 36 | 0.3432 | 0.2937 | 0.2811 |
+
+### Can the level be fixed?
+
+Three fixes, each fit under the same out-of-time protocol and scored on the same test loans (`src/survival_level.py`, results in `level_experiments.json`):
+
+- **Recalibrated:** the base model plus log-odds shifts of the default and prepay hazards, fit on the 2014 validation loan-quarters (LightGBM: +0.154 default, +0.118 prepay).
+- **Vintage:** issue date as a feature, so a linear model can extrapolate the cohort trend.
+- **Macro:** US unemployment (FRED `UNRATE`) in each loan-quarter's calendar month. Test loans use the *realized* path, i.e. perfect foresight, so this is an upper bound on what a macro scenario could add.
+
+Predicted ÷ observed, with Late (31–120 days) loans counted as defaults (1.00 = calibrated). AUC at 12 months is a point estimate.
+
+| Model | Variant | 2015 @36m | 2016 @36m | 2018 @12m | Phase 1 loans | Loss predicted ÷ realized | AUC @12m | Validation log loss |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| LightGBM | base | 0.760 | 0.751 | 0.799 | 0.748 | 0.726 | 0.6996 | 0.30147 |
+| LightGBM | recalibrated | 0.842 | 0.829 | 0.915 | 0.827 | 0.814 | 0.6995 | 0.30092 |
+| LightGBM | vintage | 0.753 | 0.728 | 0.743 | 0.727 | 0.722 | 0.7027 | 0.30074 |
+| LightGBM | macro | 0.771 | 0.735 | 0.816 | 0.743 | 0.755 | 0.6994 | 0.30078 |
+| LR | base | 0.823 | 0.794 | 0.798 | 0.802 | 0.799 | 0.6967 | 0.30238 |
+| LR | recalibrated | 0.873 | 0.839 | 0.877 | 0.848 | 0.858 | 0.6965 | 0.30175 |
+| LR | vintage | 0.620 | 0.560 | 0.522 | 0.584 | 0.598 | 0.6943 | 0.30224 |
+| LR | macro | 0.717 | 0.684 | 0.705 | 0.689 | 0.695 | 0.6964 | 0.30183 |
+
+("Phase 1 loans" is the mean CIF(36) on Phase 1's 372,802 test loans divided by their default rate; the loss column uses the expected-loss setup below. Re-fitting the base models reproduces the Phase 2 validation losses exactly.)
+
+- **Recalibration is the only fix that helps both models**, closing about 30% of the gap (LightGBM loss ratio 0.726 → 0.814, LR 0.799 → 0.858) without changing ranking. The 2014 cohort was itself riskier than 2007–2013, and the offsets carry that forward, but 2015–16 were riskier still.
+- **The vintage trend backfires for LR** (0.82 → 0.62 for 2015). Default rates *fell* across 2007–2013 as the post-crisis cohorts improved, so the learned trend extrapolates downwards. LightGBM can't extrapolate at all; it gets its best 12-month AUC (0.7027) but no better level.
+- **Unemployment moves predictions the wrong way for LR** (0.82 → 0.72), even with perfect foresight: unemployment fell from 5.7% to 3.8% over the test period while defaults rose. For LightGBM it is roughly neutral.
+- **Validation log loss doesn't predict this.** Vintage and macro have the *best* validation losses, yet do worse out of time: they fit 2014 better without carrying forward to 2015 onwards.
+
+Conclusion: the rising risk of LC's later cohorts is not explained by the national cycle, or by any trend visible in 2007–2013. It looks like a change in who LC lent to at a given grade, which only recent-cohort data can reveal. In practice that means re-estimating the level as each new cohort seasons.
+
+![Level experiments](figures/level_experiments.png)
 
 ### Lifetime expected loss (IFRS 9-style illustration)
 
@@ -304,14 +338,14 @@ LGD by grade (2007–2013 charge-offs, `(loan_amnt − total_rec_prncp − recov
 - **Censoring.** For a loan still running at the snapshot we know it survived *up to* its last observed payment, but not what happens after. A survival model uses exactly that much: the loan counts as "at risk, no default" for each quarter it was observed, then drops out. Phase 1 had to discard these loans; here they add 1,021,990 loans to the test set and are part of training and validation too.
 - **Prepayment as a competing risk.** A loan that is paid off can never default. If payoff were treated as ordinary censoring, the model would assume those loans were still exposed to default afterwards and overstate default probabilities. Modeling prepay as its own outcome lets the default curve flatten as loans pay off.
 - **From hazard to default curve.** The model gives, for each quarter, the chance of defaulting or prepaying *given the loan is still active*. Multiplying the "neither" probabilities gives the chance of still being active; summing (still active at the start of the quarter) × (default hazard) gives the cumulative chance of having defaulted by any month, e.g. `CIF_default(36)`.
-- **Did Phase 2 fix the under-prediction on recent cohorts?** No. Where outcomes are complete (2015–2016 issues), Phase 2 predicts 71–87% of the observed defaults, the same shortfall as Phase 1, and its expected loss covers 73% of the realized loss. The newest cohorts look over-predicted only because their defaults are not yet fully recorded. Fixing the level needs information about calendar time (macro variables, or recalibration on recent data), not a different outcome definition.
+- **Did Phase 2 fix the under-prediction on recent cohorts?** No. Where outcomes are complete (2015–2016 issues), Phase 2 predicts 71–87% of the observed defaults, the same shortfall as Phase 1, and its expected loss covers 73% of the realized loss. The newest cohorts look over-predicted only because their defaults are not yet fully recorded: counting loans 31–120 days late as defaults, every cohort is under-predicted by a similar margin (0.71–0.80 for LightGBM). Of the fixes tried, only recalibrating the level on the 2014 cohort helps, closing about 30% of the gap; national unemployment and a vintage trend make the linear model worse. The remaining gap looks like a change in LC's lending that only newer cohorts' own data can reveal.
 
 ### Limitations
 
 - **Default timing is proxied** by the last payment date (+1 month). LC doesn't give the date of the first missed payment or of the charge-off.
-- **Recent cohorts are under-observed.** Loans in arrears that had not yet been charged off at the snapshot count as censored, so observed default rates for 2017–18 are too low (see calibration).
+- **Recent cohorts are under-observed.** Loans in arrears that had not yet been charged off at the snapshot count as censored, so observed default rates for 2017–18 are too low; the `arrears_as_default` sensitivity corrects for most of this (see calibration).
 - **Prepayment is treated as a competing risk** with its own hazard, but no prepayment-specific drivers (rate incentives) are modeled.
-- **No macroeconomic variables.** The models cannot react to the change in risk across cohorts, which is why the under-prediction persists.
+- **The level shift is unexplained.** National unemployment and a vintage trend don't account for the rising risk of later cohorts (see "Can the level be fixed?"); recalibration on 2014 closes only about 30% of the gap.
 - **Accepted loans only**, no reject inference.
 - **LGD is a simple grade average** from training charge-offs, ignoring time to recovery and collection costs.
 - **Training labels overlap the test period.** Loans issued up to 2013 are followed to 2019, so the models see outcomes from calendar years that also affect the test cohorts. This is also true of Phase 1.
@@ -320,14 +354,15 @@ LGD by grade (2007–2013 charge-offs, `(loan_amnt − total_rec_prncp − recov
 
 - Drift-aware survival models that let the hazard shift with calendar time (Peng & Lessmann 2026).
 - Deep competing-risks models (Blumenstock, Lessmann & Seow 2022).
-- Macroeconomic covariates (unemployment, rates) per calendar quarter.
+- Rolling recalibration: re-fit the level offsets on each new cohort's early quarters as it seasons, and test how much of the gap that closes.
+- Richer cycle indicators than national unemployment (state-level unemployment, credit-card delinquency rates, LC's own underwriting changes).
 - Deployment: a FastAPI scoring service with input-drift (PSI) and calibration monitoring.
 
 ## 9. Reproduce
 
 ```bash
 make install
-make test     # 123 tests on synthetic fixtures
+make test     # 129 tests on synthetic fixtures
 make train    # needs data/archive/; writes metrics.json and figures/reliability.png
 make notebooks
 make train-survival   # Phase 2: writes reports/artifacts/survival/*.json and the Phase 2 figures
