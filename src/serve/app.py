@@ -4,8 +4,12 @@
 
 POST /v1/score          one application -> default curve, PD, ECL, reasons
 POST /v1/score/batch    up to MAX_BATCH applications
+POST /v1/outcomes       record outcomes for previously scored loans (labels arrive later)
 GET  /health            liveness and whether the model loaded
 GET  /v1/model          the bundle's model card
+
+Every scored application is logged to the database in DATABASE_URL
+(default sqlite:///predictions.db); a logging failure never fails scoring.
 
 The model bundle is loaded once at startup. Every response carries a
 `request_id` (also in the X-Request-ID header).
@@ -16,7 +20,8 @@ import logging
 import time
 import uuid
 from contextlib import asynccontextmanager
-from typing import Optional
+from datetime import datetime
+from typing import Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
@@ -24,6 +29,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .bundle import ModelBundle, load_bundle
+from .db import init_db, make_engine
+from .logging import log_predictions, record_outcomes
 from .scoring import LoanApplication, score_many
 
 logger = logging.getLogger("src.serve")
@@ -63,9 +70,22 @@ class BatchResponse(BaseModel):
     results: list[ScoreResult]
 
 
+class OutcomeIn(BaseModel):
+    loan_id: str = Field(max_length=64)
+    event: Literal["default", "prepay", "censored"]
+    duration_months: int = Field(ge=0, le=120, description="months from issue to the event, or observed so far")
+    observed_at: Optional[datetime] = None
+
+
+class OutcomesRequest(BaseModel):
+    outcomes: list[OutcomeIn] = Field(min_length=1, max_length=10_000)
+
+
 class State:
     bundle: Optional[ModelBundle] = None
     load_error: Optional[str] = None
+    Session = None
+    db_error: Optional[str] = None
 
 
 state = State()
@@ -83,7 +103,15 @@ async def lifespan(app: FastAPI):
     except Exception as exc:                       # keep serving /health so the failure is visible
         state.load_error = repr(exc)
         logger.exception("model failed to load")
+    try:
+        state.engine = make_engine()
+        state.Session = init_db(state.engine)
+    except Exception as exc:                       # scoring still works without the database
+        state.Session, state.db_error = None, repr(exc)
+        logger.exception("database unavailable; predictions will not be logged")
     yield
+    if state.Session is not None:
+        state.engine.dispose()
 
 
 app = FastAPI(title="Credit risk scoring", version="1.0", lifespan=lifespan,
@@ -126,6 +154,12 @@ def _results(request: Request, apps: list[LoanApplication], calibrated: bool) ->
     ids = [request.state.request_id] if len(apps) == 1 else [str(uuid.uuid4()) for _ in apps]
     for rid, r in zip(ids, scored):
         r["request_id"] = rid
+    latency_ms = (time.perf_counter() - request.state.started) * 1000 / len(apps)
+    log_predictions(state.Session, [
+        {"request_id": r["request_id"], "loan_id": a.loan_id, "model_version": r["model_version"],
+         "features": a.model_dump(), "pd_12m": r["pd_12m"], "pd_lifetime": r["pd_lifetime"],
+         "ecl_lifetime": r["ecl_lifetime"], "calibrated": calibrated, "latency_ms": latency_ms}
+        for a, r in zip(apps, scored)])
     return scored
 
 
@@ -142,13 +176,22 @@ def score_batch(request: Request, body: BatchRequest,
             "results": _results(request, body.applications, calibrated)}
 
 
+@app.post("/v1/outcomes")
+def outcomes(request: Request, body: OutcomesRequest):
+    if state.Session is None:
+        raise HTTPException(status_code=503, detail=f"database unavailable: {state.db_error}")
+    counts = record_outcomes(state.Session, [o.model_dump() for o in body.outcomes])
+    return {"request_id": request.state.request_id, **counts}
+
+
 @app.get("/health")
 def health(request: Request):
     return {"request_id": request.state.request_id,
             "status": "ok" if state.bundle is not None else "degraded",
             "model_loaded": state.bundle is not None,
             "model_version": state.bundle.version if state.bundle else None,
-            "error": state.load_error}
+            "database": state.Session is not None,
+            "error": state.load_error or state.db_error}
 
 
 @app.get("/v1/model")
