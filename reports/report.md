@@ -245,7 +245,7 @@ Training on 230,712 loans instead of Phase 1's 175,422 (both terms, unfinished l
 
 For 2015–2016, where the outcomes are complete, both models still predict only 71–87% of the defaults that happened (ratios across both models and all horizons), the same gap as Phase 1. The model learns default *levels* from 2007–2013 and has no way to know that later cohorts were riskier at the same features (notebook 05: LC cut interest rates while risk rose).
 
-The apparent over-prediction for 2017 (24 months) and 2018 (12 months) should not be read as the problem going away. A loan that stops paying is reported as Late for several months before it is charged off; for loans issued in 2017–18, many of those defaults had not been charged off by the March 2019 snapshot, so they are censored here and the observed default rate for those cohorts is understated.
+The apparent over-prediction for 2017 (24 months) and 2018 (12 months) should not be read as the problem going away. A loan that stops paying is reported as Late for several months before it is charged off; for loans issued in 2017–18, many of those defaults had not been charged off by the March 2019 snapshot, so they are censored here and the observed default rate for those cohorts is understated. At the snapshot, 11,719 of the 2018 loans were in arrears (Late or In Grace) against only 8,853 recorded defaults; for 2017 it was 12,393 in arrears against 39,133 defaults, and for 2015 only 2,250 against 75,803 (`outcomes_summary.json`).
 
 By grade (36 months), the models under-predict most for the riskiest loans (E–G: observed 0.3432, LightGBM 0.2811) and are close for A–B.
 

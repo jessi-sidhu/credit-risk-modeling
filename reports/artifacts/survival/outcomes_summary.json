@@ -82,6 +82,80 @@
     "36": 0.14217902796028103,
     "60": 0.25372696756035706
   },
+  "in_arrears_at_snapshot_by_issue_year": {
+    "2007": {
+      "loans": 599,
+      "in_arrears": 0,
+      "share": 0.0,
+      "defaulted": 158
+    },
+    "2008": {
+      "loans": 2393,
+      "in_arrears": 0,
+      "share": 0.0,
+      "defaulted": 496
+    },
+    "2009": {
+      "loans": 5281,
+      "in_arrears": 0,
+      "share": 0.0,
+      "defaulted": 723
+    },
+    "2010": {
+      "loans": 12537,
+      "in_arrears": 0,
+      "share": 0.0,
+      "defaulted": 1757
+    },
+    "2011": {
+      "loans": 21721,
+      "in_arrears": 0,
+      "share": 0.0,
+      "defaulted": 3297
+    },
+    "2012": {
+      "loans": 53367,
+      "in_arrears": 0,
+      "share": 0.0,
+      "defaulted": 8644
+    },
+    "2013": {
+      "loans": 134814,
+      "in_arrears": 4,
+      "share": 2.9670508997581854e-05,
+      "defaulted": 21024
+    },
+    "2014": {
+      "loans": 235629,
+      "in_arrears": 607,
+      "share": 0.0025760835890319103,
+      "defaulted": 41162
+    },
+    "2015": {
+      "loans": 421093,
+      "in_arrears": 2250,
+      "share": 0.005343237717083875,
+      "defaulted": 75803
+    },
+    "2016": {
+      "loans": 434344,
+      "in_arrears": 7241,
+      "share": 0.016671117823660507,
+      "defaulted": 68239
+    },
+    "2017": {
+      "loans": 443065,
+      "in_arrears": 12393,
+      "share": 0.02797106519359462,
+      "defaulted": 39133
+    },
+    "2018": {
+      "loans": 494110,
+      "in_arrears": 11719,
+      "share": 0.023717390864382425,
+      "defaulted": 8853
+    }
+  },
   "duration_median_by_event": {
     "censored": 20.0,
     "default": 15.0,

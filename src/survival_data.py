@@ -63,6 +63,9 @@ OPEN_STATUSES = {
     "In Grace Period",
 }
 
+# Open loans that have missed payments at the snapshot.
+ARREARS_STATUSES = {"Late (16-30 days)", "Late (31-120 days)", "In Grace Period"}
+
 # A Fully Paid loan whose last payment falls within this many months of the
 # scheduled term counts as paid at maturity (censored at `term`), not as a
 # prepayment. Payment dates jitter by a month or two around the schedule
@@ -278,6 +281,16 @@ def main() -> None:
             for m in [(features["term"] == t)
                       & _is_matured(features["issue_d"], features["term"], features.attrs["snapshot_date"])
                       & outcomes["loan_status"].isin(DEFAULT_STATUSES | PAID_STATUSES)]
+        },
+        # Loans in arrears at the snapshot are censored, but many will end in
+        # default. A high share for recent cohorts means their observed
+        # default rates are understated (charge-off lags the missed payment).
+        "in_arrears_at_snapshot_by_issue_year": {
+            str(y): {"loans": int(len(g)),
+                     "in_arrears": int(g.isin(ARREARS_STATUSES).sum()),
+                     "share": float(g.isin(ARREARS_STATUSES).mean()),
+                     "defaulted": int(g.isin(DEFAULT_STATUSES).sum())}
+            for y, g in outcomes["loan_status"].groupby(features["issue_d"].dt.year)
         },
         "duration_median_by_event": outcomes.groupby(outcomes["event"].map(EVENT_NAMES))["duration"]
                                             .median().to_dict(),
