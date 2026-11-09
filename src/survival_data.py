@@ -66,6 +66,13 @@ OPEN_STATUSES = {
 # Open loans that have missed payments at the snapshot.
 ARREARS_STATUSES = {"Late (16-30 days)", "Late (31-120 days)", "In Grace Period"}
 
+# With arrears_as_default=True these open loans count as defaults (dated
+# like a charge-off: last payment + 1 month). More than 30 days past due is
+# close to the usual regulatory default trigger (90 days past due), and LC
+# charges these loans off after 120 days. In Grace and Late (16-30 days)
+# stay censored: many of those loans catch up.
+ARREARS_DEFAULT_STATUSES = {"Late (31-120 days)"}
+
 # A Fully Paid loan whose last payment falls within this many months of the
 # scheduled term counts as paid at maturity (censored at `term`), not as a
 # prepayment. Payment dates jitter by a month or two around the schedule
@@ -85,7 +92,11 @@ def _months_between(start: pd.Series, end: pd.Series) -> pd.Series:
     return (end.dt.year - start.dt.year) * 12 + (end.dt.month - start.dt.month)
 
 
-def build_outcomes(raw: pd.DataFrame, snapshot_date: str = SNAPSHOT_DATE) -> pd.DataFrame:
+def build_outcomes(
+    raw: pd.DataFrame,
+    snapshot_date: str = SNAPSHOT_DATE,
+    arrears_as_default: bool = False,
+) -> pd.DataFrame:
     """Compute duration and event from raw LC columns.
 
     `raw` needs `term` (int), `issue_d` (datetime), `loan_status` and
@@ -98,9 +109,10 @@ def build_outcomes(raw: pd.DataFrame, snapshot_date: str = SNAPSHOT_DATE) -> pd.
     m_last = _months_between(raw["issue_d"], last_pay)
     m_snap = _months_between(raw["issue_d"], pd.Series(pd.Timestamp(snapshot_date), index=raw.index))
 
-    is_default = status.isin(DEFAULT_STATUSES)
+    default_statuses = DEFAULT_STATUSES | (ARREARS_DEFAULT_STATUSES if arrears_as_default else set())
+    is_default = status.isin(default_statuses)
     is_paid = status.isin(PAID_STATUSES)
-    is_open = status.isin(OPEN_STATUSES)
+    is_open = status.isin(OPEN_STATUSES) & ~is_default
     unknown = ~(is_default | is_paid | is_open)
     prepaid = is_paid & (m_last < term - NEAR_MATURITY_MONTHS)
 
@@ -138,6 +150,7 @@ def build_outcomes(raw: pd.DataFrame, snapshot_date: str = SNAPSHOT_DATE) -> pd.
 def load_survival_data(
     raw_dir: Path = RAW_DIR,
     snapshot_date: str = SNAPSHOT_DATE,
+    arrears_as_default: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """(features, outcomes) for every accepted loan, both indexed by LC `id`.
 
@@ -166,6 +179,7 @@ def load_survival_data(
             "last_pymnt_d": pd.to_datetime(raw["last_pymnt_d"], format="%b-%Y", errors="coerce"),
         }),
         snapshot_date=snapshot_date,
+        arrears_as_default=arrears_as_default,
     )
 
     n_imp, n_clip = int(outcomes["impossible"].sum()), int(outcomes["clipped"].sum())
@@ -187,6 +201,7 @@ def load_survival_data(
         "row_counts": counts,
         "events_by_term": {str(k): {str(c): int(v) for c, v in row.items()} for k, row in table.iterrows()},
         "snapshot_date": snapshot_date,
+        "arrears_as_default": arrears_as_default,
         "near_maturity_months": NEAR_MATURITY_MONTHS,
         "drop_clipped": DROP_CLIPPED,
         "source_file": path.name,

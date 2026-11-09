@@ -116,3 +116,18 @@ def test_drop_clipped_flag(tmp_path, monkeypatch):
     monkeypatch.setattr(sd, "DROP_CLIPPED", True)
     feats, _ = sd.load_survival_data(raw_dir=_lc_csv(tmp_path, CASES))
     assert len(feats) == len(CASES) - 2
+
+
+def test_arrears_as_default_option():
+    rows = [("Late (31-120 days)", "Jan-2017", 36, "Dec-2018"),
+            ("Late (16-30 days)",  "Jan-2017", 36, "Feb-2019"),
+            ("In Grace Period",    "Jan-2017", 36, "Feb-2019"),
+            ("Current",            "Jan-2017", 36, "Mar-2019")]
+    base = build_outcomes(_raw(rows))
+    alt = build_outcomes(_raw(rows), arrears_as_default=True)
+    assert base["event"].tolist() == [C, C, C, C]
+    assert alt["event"].tolist() == [D, C, C, C]
+    assert alt["duration"].iloc[0] == 24                  # 23 months to last payment + 1
+    assert base["duration"].iloc[0] == 23
+    assert alt["finished"].tolist() == [True, False, False, False]
+    assert alt["duration"].iloc[1:].tolist() == base["duration"].iloc[1:].tolist()
