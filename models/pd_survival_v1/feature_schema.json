@@ -10,7 +10,8 @@
       "training_cap": [
         1000.0,
         35000.0
-      ]
+      ],
+      "training_median": 12000.0
     },
     "term": {
       "dtype": "int",
@@ -22,7 +23,8 @@
       "training_cap": [
         36.0,
         60.0
-      ]
+      ],
+      "training_median": 36.0
     },
     "int_rate": {
       "dtype": "float",
@@ -34,7 +36,8 @@
       "training_cap": [
         5.420000076293945,
         25.889999389648438
-      ]
+      ],
+      "training_median": 13.67
     },
     "grade": {
       "dtype": "category",
@@ -59,7 +62,8 @@
       "training_cap": [
         0.0,
         10.0
-      ]
+      ],
+      "training_median": 6.0
     },
     "home_ownership": {
       "dtype": "category",
@@ -82,7 +86,8 @@
       "training_cap": [
         10000.0,
         500000.0
-      ]
+      ],
+      "training_median": 61000.0
     },
     "purpose": {
       "dtype": "category",
@@ -114,7 +119,8 @@
       "training_cap": [
         0.0,
         34.810001373291016
-      ]
+      ],
+      "training_median": 16.13
     },
     "fico": {
       "dtype": "float",
@@ -126,7 +132,8 @@
       "training_cap": [
         652.0,
         827.0
-      ]
+      ],
+      "training_median": 697.0
     },
     "open_acc": {
       "dtype": "float",
@@ -139,7 +146,8 @@
       "training_cap": [
         2.0,
         32.0
-      ]
+      ],
+      "training_median": 10.0
     },
     "revol_util": {
       "dtype": "float",
@@ -152,7 +160,8 @@
       "training_cap": [
         0.0,
         100.30000305175781
-      ]
+      ],
+      "training_median": 59.0
     }
   },
   "engineered": {
@@ -161,28 +170,32 @@
       "training_cap": [
         0.013333333656191826,
         0.5687839217782094
-      ]
+      ],
+      "training_median": 0.2
     },
     "installment_estimate": {
       "label": "Monthly installment",
       "training_cap": [
         31.940393447875977,
         1304.2947998046875
-      ]
+      ],
+      "training_median": 375.48304781682
     },
     "installment_to_income": {
       "label": "Installment relative to income",
       "training_cap": [
         0.005194244906306267,
         0.21206532418727875
-      ]
+      ],
+      "training_median": 0.07509660956336399
     },
     "emp_x_homeowner": {
       "label": "Years employed (homeowners)",
       "training_cap": [
         0.0,
         10.0
-      ]
+      ],
+      "training_median": 1.0
     }
   },
   "optional": {

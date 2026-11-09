@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 from .drift import _bin_numeric, _hist
-from .features import CATEGORICAL
+from .features import CATEGORICAL, engineer_features
 from .serve.bundle import BUNDLE_FILES, DEFAULT_BUNDLE, load_bundle
 from .survival_data import load_survival_data
 from .train_survival import split_masks
@@ -68,7 +68,9 @@ def _git_commit() -> str:
         return "unknown"
 
 
-def build_schema(model) -> dict:
+def build_schema(model, train: pd.DataFrame) -> dict:
+    """`train`: engineered training loans, for the medians reason codes use
+    to say whether a value is high or low."""
     ohe = model.pre.named_transformers_["cat"].named_steps["ohe"]
     categories = {c: [str(v) for v in cats] for c, cats in zip(CATEGORICAL, ohe.categories_)}
     fields = {}
@@ -78,10 +80,13 @@ def build_schema(model) -> dict:
             f["allowed"] = categories[name]
         if name in model.clip_:
             f["training_cap"] = list(model.clip_[name])
+        if spec["dtype"] != "category":
+            f["training_median"] = float(train[name].median())
         fields[name] = f
     return {
         "fields": fields,
-        "engineered": {name: {"label": label, "training_cap": list(model.clip_[name])}
+        "engineered": {name: {"label": label, "training_cap": list(model.clip_[name]),
+                              "training_median": float(train[name].replace([np.inf, -np.inf], np.nan).median())}
                        for name, label in ENGINEERED_LABELS.items()},
         "optional": {"issue_d": "issue month (YYYY-MM), used for monitoring only",
                      "loan_id": "client-supplied id, used to match outcomes later"},
@@ -158,10 +163,9 @@ def main() -> None:
                "n_train_chargeoffs": {g: v["n_train_chargeoffs"] for g, v in ecl["lgd_by_grade"].items()},
                "source": "ecl.json: training-period (2007-2013) charge-offs"},
               open(out / "lgd_by_grade.json", "w"), indent=2)
-    json.dump(build_schema(model), open(out / "feature_schema.json", "w"), indent=2)
-
     features, _ = load_survival_data()
     train = features[split_masks(features)["train"]]
+    json.dump(build_schema(model, engineer_features(train)), open(out / "feature_schema.json", "w"), indent=2)
     json.dump(reference_stats(train), open(out / "reference_stats.json", "w"), indent=2)
     del features, train
 
