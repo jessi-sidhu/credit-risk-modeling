@@ -297,9 +297,13 @@ def fit_level_offsets(probs: np.ndarray, y: np.ndarray) -> np.ndarray:
 
 def apply_level_offsets(h: np.ndarray, offsets) -> np.ndarray:
     """Apply `fit_level_offsets` shifts to (..., 3) hazards; NaN stays NaN."""
+    import warnings
+
     shift = np.r_[0.0, np.asarray(offsets, float)]
     z = np.log(np.clip(h, 1e-12, 1.0)) + shift
-    z = np.exp(z - np.nanmax(z, axis=-1, keepdims=True))
+    with warnings.catch_warnings():                 # quarters after the term are all-NaN
+        warnings.simplefilter("ignore", RuntimeWarning)
+        z = np.exp(z - np.nanmax(z, axis=-1, keepdims=True))
     return (z / z.sum(axis=-1, keepdims=True)).astype(h.dtype)
 
 
