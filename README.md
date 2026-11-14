@@ -280,7 +280,7 @@ flowchart LR
     M --> R[GET /v1/monitoring<br/>reports/monitoring/report.html]
 ```
 
-**Live API:** _pending deployment (see Step 7)._
+**Live API:** https://credit-risk-api-fxk5.onrender.com (interactive docs at [`/docs`](https://credit-risk-api-fxk5.onrender.com/docs)). Hosted on Render's free tier: it sleeps after 15 minutes without traffic, so the first request after a pause takes about a minute. Limited to 60 requests per minute per IP and 100 applications per batch; the prediction log is SQLite on the container disk and resets on each redeploy.
 
 ### How a request is scored
 
@@ -294,9 +294,9 @@ flowchart LR
 Per-request scores match Phase 2's batch prediction code to 1e-6 (`tests/test_scoring.py`).
 
 ```bash
-curl -X POST http://localhost:8000/v1/score \
+curl -X POST https://credit-risk-api-fxk5.onrender.com/v1/score \
      -H 'Content-Type: application/json' \
-     --data @examples/sample_request.json
+     --data @examples/sample_request.json        # or http://localhost:8000 after `make serve`
 ```
 
 ```json
