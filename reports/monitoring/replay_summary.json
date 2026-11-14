@@ -1,0 +1,2878 @@
+{
+  "max_replay_loans": 50000,
+  "loans_sampled": 50000,
+  "months": [
+    "2015-01",
+    "2018-12"
+  ],
+  "outcome_rule": "12-month outcome posted 12 months after issue; Late (31-120 days) counted as default",
+  "alert_rule": {
+    "calibration_bounds": [
+      0.85,
+      1.15
+    ],
+    "psi_alert": 0.25
+  },
+  "raw": {
+    "calibrated": false,
+    "loans_scored": 49675,
+    "loans_rejected_by_validation": 25,
+    "first_alerts": {
+      "psi_int_rate": {
+        "month": "2015-11",
+        "psi": 0.2551764977697212
+      },
+      "calibration": {
+        "month": "2016-04",
+        "outcome_months": 4,
+        "loans_with_outcomes": 3342,
+        "ratio": 0.7650199810880919
+      },
+      "psi_revol_util": {
+        "month": "2017-11",
+        "psi": 0.29716258905679516
+      },
+      "psi_grade": {
+        "month": "2018-11",
+        "psi": 0.2538578588075704
+      }
+    },
+    "final_calibration": {
+      "n": 36389,
+      "predicted": 0.042995938807557255,
+      "observed": 0.05702272664816291,
+      "ratio": 0.7540140806111811
+    },
+    "final_calibration_by_month": [
+      {
+        "month": "2015-01",
+        "n": 932,
+        "predicted": 0.042664539464036665,
+        "observed": 0.04291845493562232,
+        "ratio": 0.9940837695120542
+      },
+      {
+        "month": "2015-02",
+        "n": 649,
+        "predicted": 0.042481802595621385,
+        "observed": 0.060092449922958396,
+        "ratio": 0.7069407662707251
+      },
+      {
+        "month": "2015-03",
+        "n": 717,
+        "predicted": 0.041438128951335335,
+        "observed": 0.04881450488145049,
+        "ratio": 0.848889670231641
+      },
+      {
+        "month": "2015-04",
+        "n": 1044,
+        "predicted": 0.042608733120832465,
+        "observed": 0.06800766283524905,
+        "ratio": 0.6265284137767477
+      },
+      {
+        "month": "2015-05",
+        "n": 953,
+        "predicted": 0.043496793507194625,
+        "observed": 0.05666316894018888,
+        "ratio": 0.7676378557843793
+      },
+      {
+        "month": "2015-06",
+        "n": 799,
+        "predicted": 0.04175556084119914,
+        "observed": 0.05131414267834793,
+        "ratio": 0.8137242222467833
+      },
+      {
+        "month": "2015-07",
+        "n": 1280,
+        "predicted": 0.042163117119512955,
+        "observed": 0.065625,
+        "ratio": 0.6424855942021022
+      },
+      {
+        "month": "2015-08",
+        "n": 974,
+        "predicted": 0.04072684778632501,
+        "observed": 0.059548254620123205,
+        "ratio": 0.6839301679979406
+      },
+      {
+        "month": "2015-09",
+        "n": 798,
+        "predicted": 0.03936264934488618,
+        "observed": 0.05639097744360902,
+        "ratio": 0.6980309817159817
+      },
+      {
+        "month": "2015-10",
+        "n": 1387,
+        "predicted": 0.038742213223065494,
+        "observed": 0.05191059841384282,
+        "ratio": 0.7463256908387756
+      },
+      {
+        "month": "2015-11",
+        "n": 1051,
+        "predicted": 0.03872085231596819,
+        "observed": 0.04091341579448145,
+        "ratio": 0.946409669397269
+      },
+      {
+        "month": "2015-12",
+        "n": 1294,
+        "predicted": 0.040552738506174836,
+        "observed": 0.05409582689335394,
+        "ratio": 0.749646337528432
+      },
+      {
+        "month": "2016-01",
+        "n": 954,
+        "predicted": 0.03770523337135024,
+        "observed": 0.051362683438155136,
+        "ratio": 0.7340978089034312
+      },
+      {
+        "month": "2016-02",
+        "n": 1081,
+        "predicted": 0.041231530953136926,
+        "observed": 0.05920444033302498,
+        "ratio": 0.6964263275053284
+      },
+      {
+        "month": "2016-03",
+        "n": 1761,
+        "predicted": 0.04259153769627705,
+        "observed": 0.05394662123793299,
+        "ratio": 0.7895126092962514
+      },
+      {
+        "month": "2016-04",
+        "n": 990,
+        "predicted": 0.0418902809396163,
+        "observed": 0.07272727272727272,
+        "ratio": 0.5759913629197242
+      },
+      {
+        "month": "2016-05",
+        "n": 793,
+        "predicted": 0.04171188452659844,
+        "observed": 0.05674653215636822,
+        "ratio": 0.7350560984353903
+      },
+      {
+        "month": "2016-06",
+        "n": 908,
+        "predicted": 0.04091225772162576,
+        "observed": 0.06938325991189427,
+        "ratio": 0.589656031924384
+      },
+      {
+        "month": "2016-07",
+        "n": 989,
+        "predicted": 0.046382868072725444,
+        "observed": 0.07077856420626896,
+        "ratio": 0.6553236646275066
+      },
+      {
+        "month": "2016-08",
+        "n": 989,
+        "predicted": 0.04496282503525512,
+        "observed": 0.05358948432760364,
+        "ratio": 0.8390232822616475
+      },
+      {
+        "month": "2016-09",
+        "n": 771,
+        "predicted": 0.04780658027864086,
+        "observed": 0.07003891050583658,
+        "ratio": 0.6825717295339279
+      },
+      {
+        "month": "2016-10",
+        "n": 912,
+        "predicted": 0.04493483470906938,
+        "observed": 0.05482456140350877,
+        "ratio": 0.8196113850934256
+      },
+      {
+        "month": "2016-11",
+        "n": 978,
+        "predicted": 0.04350639690946597,
+        "observed": 0.05725971370143149,
+        "ratio": 0.7598081460260308
+      },
+      {
+        "month": "2016-12",
+        "n": 1044,
+        "predicted": 0.04591417367983279,
+        "observed": 0.04885057471264368,
+        "ratio": 0.9398901435636359
+      },
+      {
+        "month": "2017-01",
+        "n": 869,
+        "predicted": 0.044330741791752136,
+        "observed": 0.04602991944764097,
+        "ratio": 0.9630853654258151
+      },
+      {
+        "month": "2017-02",
+        "n": 813,
+        "predicted": 0.04332919798004127,
+        "observed": 0.06273062730627306,
+        "ratio": 0.6907183913288932
+      },
+      {
+        "month": "2017-03",
+        "n": 1025,
+        "predicted": 0.04348561852838982,
+        "observed": 0.04878048780487805,
+        "ratio": 0.8914551798319913
+      },
+      {
+        "month": "2017-04",
+        "n": 821,
+        "predicted": 0.042565748489815626,
+        "observed": 0.0535931790499391,
+        "ratio": 0.7942381706849688
+      },
+      {
+        "month": "2017-05",
+        "n": 1118,
+        "predicted": 0.04491389600542493,
+        "observed": 0.06529516994633273,
+        "ratio": 0.6878593936173298
+      },
+      {
+        "month": "2017-06",
+        "n": 1054,
+        "predicted": 0.04419100651152402,
+        "observed": 0.06736242884250475,
+        "ratio": 0.6560186037062862
+      },
+      {
+        "month": "2017-07",
+        "n": 1126,
+        "predicted": 0.0454869579415186,
+        "observed": 0.052397868561278864,
+        "ratio": 0.8681070278330499
+      },
+      {
+        "month": "2017-08",
+        "n": 1209,
+        "predicted": 0.04368177936817145,
+        "observed": 0.04962779156327544,
+        "ratio": 0.8801878542686546
+      },
+      {
+        "month": "2017-09",
+        "n": 1095,
+        "predicted": 0.04938001485737773,
+        "observed": 0.06940639269406393,
+        "ratio": 0.7114620561687975
+      },
+      {
+        "month": "2017-10",
+        "n": 1054,
+        "predicted": 0.04468602754523578,
+        "observed": 0.051233396584440226,
+        "ratio": 0.8722050561607133
+      },
+      {
+        "month": "2017-11",
+        "n": 1150,
+        "predicted": 0.0438563173111269,
+        "observed": 0.06260869565217392,
+        "ratio": 0.7004828459416101
+      },
+      {
+        "month": "2017-12",
+        "n": 1007,
+        "predicted": 0.04436847864176667,
+        "observed": 0.0506454816285998,
+        "ratio": 0.8760599606325301
+      }
+    ],
+    "psi_full_period": [
+      {
+        "feature": "purpose",
+        "psi": 0.12532449290373934,
+        "status": "watch"
+      },
+      {
+        "feature": "int_rate",
+        "psi": 0.11318581934455858,
+        "status": "watch"
+      },
+      {
+        "feature": "revol_util",
+        "psi": 0.1093347538201293,
+        "status": "watch"
+      },
+      {
+        "feature": "dti",
+        "psi": 0.08944399502944861,
+        "status": "ok"
+      },
+      {
+        "feature": "loan_amount",
+        "psi": 0.050185173351460034,
+        "status": "ok"
+      },
+      {
+        "feature": "open_acc",
+        "psi": 0.03491748671397608,
+        "status": "ok"
+      },
+      {
+        "feature": "grade",
+        "psi": 0.030844711688297947,
+        "status": "ok"
+      },
+      {
+        "feature": "annual_income",
+        "psi": 0.025580327940153982,
+        "status": "ok"
+      },
+      {
+        "feature": "home_ownership",
+        "psi": 0.021795044679751133,
+        "status": "ok"
+      },
+      {
+        "feature": "emp_length",
+        "psi": 0.017003220241145953,
+        "status": "ok"
+      },
+      {
+        "feature": "term",
+        "psi": 0.013542452976466522,
+        "status": "ok"
+      },
+      {
+        "feature": "fico",
+        "psi": 0.011964835161385379,
+        "status": "ok"
+      }
+    ],
+    "latency_ms_single_request": {
+      "p50": 20.63297950000731,
+      "p95": 23.31133715000817,
+      "n": 300
+    },
+    "throughput_loans_per_s": 809.5737386578709,
+    "timeline": [
+      {
+        "month": "2015-01",
+        "n_scored": 932,
+        "psi": {
+          "purpose": 0.18828599102986615,
+          "dti": 0.16534487747848214,
+          "int_rate": 0.13374084373860257,
+          "fico": 0.1047228098850957,
+          "open_acc": 0.0645945999219813,
+          "loan_amount": 0.04473438732119103,
+          "term": 0.04260142998054409,
+          "emp_length": 0.03440767955766978,
+          "grade": 0.030493837713853035,
+          "revol_util": 0.021112651153108876,
+          "home_ownership": 0.013251221556861176,
+          "annual_income": 0.013199165212039288
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-02",
+        "n_scored": 649,
+        "psi": {
+          "purpose": 0.1692286990401735,
+          "int_rate": 0.13082318376690483,
+          "dti": 0.12509416065444498,
+          "fico": 0.12188385391690618,
+          "loan_amount": 0.0772668634388141,
+          "grade": 0.06359643097740031,
+          "open_acc": 0.03688590720644813,
+          "revol_util": 0.030980317254610527,
+          "term": 0.03024231704717671,
+          "home_ownership": 0.021031686979318762,
+          "annual_income": 0.017171339057874695,
+          "emp_length": 0.013411029314612088
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-03",
+        "n_scored": 717,
+        "psi": {
+          "purpose": 0.17278216218104936,
+          "int_rate": 0.1578110848780308,
+          "dti": 0.15071808952906998,
+          "fico": 0.0897489339062444,
+          "open_acc": 0.0705366437621501,
+          "term": 0.05091192204500617,
+          "grade": 0.04347493078661603,
+          "loan_amount": 0.04007533866753954,
+          "emp_length": 0.025296318199801215,
+          "revol_util": 0.020086362317009998,
+          "annual_income": 0.013847123226190628,
+          "home_ownership": 0.010942788603892303
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-04",
+        "n_scored": 1044,
+        "psi": {
+          "purpose": 0.14981990880009557,
+          "int_rate": 0.14748602997585997,
+          "dti": 0.13069142711486814,
+          "open_acc": 0.08287330109573743,
+          "loan_amount": 0.07585501791775992,
+          "term": 0.0616667314459162,
+          "fico": 0.05297243841923634,
+          "grade": 0.04623176496604684,
+          "revol_util": 0.020570294489162883,
+          "annual_income": 0.016569851847438873,
+          "home_ownership": 0.016179034017592738,
+          "emp_length": 0.011548755086522977
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-05",
+        "n_scored": 953,
+        "psi": {
+          "purpose": 0.16931311296725837,
+          "int_rate": 0.16423429578741083,
+          "dti": 0.11915880422341639,
+          "fico": 0.08586573750336823,
+          "open_acc": 0.07186279201350317,
+          "grade": 0.06779304051854386,
+          "revol_util": 0.03965436721123114,
+          "home_ownership": 0.02882823837855793,
+          "loan_amount": 0.027951040151924983,
+          "emp_length": 0.017183532865253762,
+          "term": 0.01338682426827565,
+          "annual_income": 0.005316557879457647
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-06",
+        "n_scored": 799,
+        "psi": {
+          "int_rate": 0.2256273083957181,
+          "purpose": 0.15515170454374166,
+          "dti": 0.10555682951935541,
+          "revol_util": 0.07519212753990452,
+          "open_acc": 0.06570771027832573,
+          "fico": 0.05913447872696716,
+          "grade": 0.047109932354896265,
+          "annual_income": 0.027161551605619606,
+          "home_ownership": 0.02320783623902506,
+          "emp_length": 0.01613729382175749,
+          "loan_amount": 0.01503971656665955,
+          "term": 0.013235240339437924
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-07",
+        "n_scored": 1280,
+        "psi": {
+          "dti": 0.1705732796860785,
+          "purpose": 0.16666312697173694,
+          "int_rate": 0.12597337826646082,
+          "open_acc": 0.06374198243382047,
+          "fico": 0.059348751727695874,
+          "revol_util": 0.04090954659517165,
+          "loan_amount": 0.03251287705684094,
+          "term": 0.025582605980594135,
+          "grade": 0.02443239615531918,
+          "emp_length": 0.014045733296723659,
+          "home_ownership": 0.010634000879215427,
+          "annual_income": 0.009505890716586042
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-08",
+        "n_scored": 974,
+        "psi": {
+          "int_rate": 0.19238447114408444,
+          "purpose": 0.19105929204799027,
+          "dti": 0.11945069101336807,
+          "loan_amount": 0.06531831078684384,
+          "fico": 0.05451465514138663,
+          "open_acc": 0.038083476209614726,
+          "term": 0.03570670409355185,
+          "revol_util": 0.03484923650762682,
+          "emp_length": 0.03292384786672958,
+          "annual_income": 0.029831027231432633,
+          "home_ownership": 0.02215979358743927,
+          "grade": 0.014169923982021541
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-09",
+        "n_scored": 798,
+        "psi": {
+          "purpose": 0.21327339380125232,
+          "int_rate": 0.2129097679234185,
+          "dti": 0.10451763150621377,
+          "open_acc": 0.09254642144606877,
+          "loan_amount": 0.08756535633351362,
+          "annual_income": 0.054923618366612206,
+          "revol_util": 0.047402886948524604,
+          "fico": 0.04354118440493297,
+          "term": 0.04213094585463842,
+          "home_ownership": 0.04126908069950681,
+          "emp_length": 0.025926345615510292,
+          "grade": 0.024321502539794117
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-10",
+        "n_scored": 1387,
+        "psi": {
+          "int_rate": 0.24146175511326368,
+          "purpose": 0.16182601957049209,
+          "dti": 0.10750884937287941,
+          "loan_amount": 0.05794681277047117,
+          "fico": 0.04393869775466097,
+          "term": 0.03807708139175778,
+          "annual_income": 0.029227515578553305,
+          "revol_util": 0.027647358936911733,
+          "open_acc": 0.027516347414655973,
+          "home_ownership": 0.015137572547888872,
+          "emp_length": 0.01417651497263906,
+          "grade": 0.00925055460726379
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-11",
+        "n_scored": 1051,
+        "psi": {
+          "int_rate": 0.2551764977697212,
+          "purpose": 0.1443377857619233,
+          "dti": 0.12274375912501154,
+          "open_acc": 0.05741112093703047,
+          "revol_util": 0.047396133451015524,
+          "loan_amount": 0.03636973189547468,
+          "term": 0.03270701367108726,
+          "annual_income": 0.03139216146504749,
+          "emp_length": 0.02385648925189239,
+          "fico": 0.023823075675804658,
+          "home_ownership": 0.02346454984399496,
+          "grade": 0.02319011943078713
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-12",
+        "n_scored": 1294,
+        "psi": {
+          "int_rate": 0.20869760221045885,
+          "dti": 0.1434971091669638,
+          "purpose": 0.12518387924273455,
+          "open_acc": 0.09655069906236231,
+          "revol_util": 0.07551124367463101,
+          "fico": 0.048393309344554755,
+          "annual_income": 0.03590375396189654,
+          "home_ownership": 0.028539956647166333,
+          "loan_amount": 0.026502775513523705,
+          "emp_length": 0.025997851198550172,
+          "grade": 0.01698844762688811,
+          "term": 0.016663208103592595
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2016-01",
+        "n_scored": 954,
+        "psi": {
+          "int_rate": 0.23244137159782885,
+          "purpose": 0.18460202273031923,
+          "dti": 0.13354154417212233,
+          "annual_income": 0.12668189806202118,
+          "open_acc": 0.09878475355854865,
+          "loan_amount": 0.0800774425059288,
+          "revol_util": 0.059181653365564316,
+          "fico": 0.054431757302477624,
+          "home_ownership": 0.04497600399104778,
+          "emp_length": 0.023135808468961006,
+          "grade": 0.01970698835906493,
+          "term": 0.019047849845824385
+        },
+        "calibration_status": "insufficient outcomes",
+        "calibration_loans": 932,
+        "pooled_ratio": 0.9940837695120542,
+        "outcome_months": 1
+      },
+      {
+        "month": "2016-02",
+        "n_scored": 1081,
+        "psi": {
+          "int_rate": 0.21483269969011332,
+          "dti": 0.18093427735185835,
+          "purpose": 0.13188717798125157,
+          "loan_amount": 0.07937494401539816,
+          "open_acc": 0.056623251866674086,
+          "annual_income": 0.04937153657617741,
+          "fico": 0.04457387519933312,
+          "emp_length": 0.028372924440936847,
+          "revol_util": 0.026856444924223084,
+          "grade": 0.019980705811046624,
+          "home_ownership": 0.013896561603825224,
+          "term": 0.003794449446196992
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 1581,
+        "pooled_ratio": 0.852329628671398,
+        "outcome_months": 2
+      },
+      {
+        "month": "2016-03",
+        "n_scored": 1761,
+        "psi": {
+          "int_rate": 0.23670693657049524,
+          "dti": 0.14043424614926264,
+          "purpose": 0.13356962393432198,
+          "revol_util": 0.06637149995607133,
+          "open_acc": 0.06124661984566283,
+          "loan_amount": 0.05416965852359567,
+          "annual_income": 0.035186977774413174,
+          "fico": 0.03181276992861327,
+          "home_ownership": 0.030236681444017886,
+          "grade": 0.025719114172872298,
+          "emp_length": 0.02250247332788618,
+          "term": 0.006490499149885993
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 2298,
+        "pooled_ratio": 0.8512735010802446,
+        "outcome_months": 3
+      },
+      {
+        "month": "2016-04",
+        "n_scored": 990,
+        "psi": {
+          "int_rate": 0.21264554935834676,
+          "purpose": 0.14531796299304367,
+          "dti": 0.1375148102554799,
+          "revol_util": 0.06370312977348438,
+          "open_acc": 0.054455860646351856,
+          "loan_amount": 0.040367364393114,
+          "fico": 0.03855913238005274,
+          "grade": 0.03379882257605475,
+          "emp_length": 0.02631802250762261,
+          "home_ownership": 0.024692164774889478,
+          "annual_income": 0.022602819842647587,
+          "term": 0.0017106642378814782
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 3342,
+        "pooled_ratio": 0.7650199810880919,
+        "outcome_months": 4
+      },
+      {
+        "month": "2016-05",
+        "n_scored": 793,
+        "psi": {
+          "int_rate": 0.27411338238590816,
+          "purpose": 0.14728157757144947,
+          "dti": 0.13640937643671042,
+          "revol_util": 0.09719852601474982,
+          "open_acc": 0.06927250531917167,
+          "home_ownership": 0.06019937791669672,
+          "loan_amount": 0.05822410785180991,
+          "fico": 0.054822028434448784,
+          "emp_length": 0.030410811114948876,
+          "annual_income": 0.029522000765686413,
+          "grade": 0.022139638854468253,
+          "term": 0.0006893925637308422
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 4295,
+        "pooled_ratio": 0.765611467421144,
+        "outcome_months": 5
+      },
+      {
+        "month": "2016-06",
+        "n_scored": 908,
+        "psi": {
+          "int_rate": 0.26164150331296965,
+          "purpose": 0.15422749996707724,
+          "revol_util": 0.12989027539728532,
+          "loan_amount": 0.0561022105041004,
+          "dti": 0.04482519375755489,
+          "annual_income": 0.04406571171045308,
+          "grade": 0.04161878496029964,
+          "open_acc": 0.022722487120399183,
+          "fico": 0.022219498332715987,
+          "emp_length": 0.02171904387631486,
+          "home_ownership": 0.019847292129671904,
+          "term": 0.0035202951902910075
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 5094,
+        "pooled_ratio": 0.7726565493777556,
+        "outcome_months": 6
+      },
+      {
+        "month": "2016-07",
+        "n_scored": 989,
+        "psi": {
+          "purpose": 0.1538301713355377,
+          "int_rate": 0.12856081219927007,
+          "revol_util": 0.09517004374292792,
+          "grade": 0.06999750154271192,
+          "dti": 0.04488977587387259,
+          "open_acc": 0.04098069742167609,
+          "fico": 0.03905435567945116,
+          "loan_amount": 0.02618442480682706,
+          "home_ownership": 0.021136277576871535,
+          "annual_income": 0.012961443115271132,
+          "term": 0.012145308551602743,
+          "emp_length": 0.006211348605905611
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 6374,
+        "pooled_ratio": 0.7426170981833741,
+        "outcome_months": 7
+      },
+      {
+        "month": "2016-08",
+        "n_scored": 989,
+        "psi": {
+          "int_rate": 0.24314985636726089,
+          "purpose": 0.1488038474407956,
+          "revol_util": 0.10348141010484169,
+          "grade": 0.08964164333530426,
+          "dti": 0.05492750236037284,
+          "fico": 0.049978564774143135,
+          "loan_amount": 0.044449932006267005,
+          "home_ownership": 0.03541538928392733,
+          "open_acc": 0.034724006954672905,
+          "annual_income": 0.02028605413585076,
+          "emp_length": 0.019848908850328067,
+          "term": 5.1168621579056335e-05
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 7348,
+        "pooled_ratio": 0.7345511219967504,
+        "outcome_months": 8
+      },
+      {
+        "month": "2016-09",
+        "n_scored": 771,
+        "psi": {
+          "purpose": 0.17907396075613202,
+          "int_rate": 0.1624796536050523,
+          "revol_util": 0.1014726079000813,
+          "grade": 0.08301128495850559,
+          "open_acc": 0.06085140009945491,
+          "fico": 0.05782835293764651,
+          "dti": 0.0550987410616487,
+          "annual_income": 0.04374973941230139,
+          "loan_amount": 0.0235231981022229,
+          "home_ownership": 0.02172494289403504,
+          "emp_length": 0.01703237630186238,
+          "term": 0.0001321260718418082
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 8146,
+        "pooled_ratio": 0.7310320506634858,
+        "outcome_months": 9
+      },
+      {
+        "month": "2016-10",
+        "n_scored": 912,
+        "psi": {
+          "revol_util": 0.1551964140175162,
+          "purpose": 0.13305341915027108,
+          "grade": 0.11475342035666325,
+          "dti": 0.10455469142956511,
+          "int_rate": 0.06840566367279204,
+          "annual_income": 0.0602978751997293,
+          "open_acc": 0.05032470867512514,
+          "loan_amount": 0.04380306922859785,
+          "home_ownership": 0.03687229268016912,
+          "fico": 0.028867703007181042,
+          "emp_length": 0.014536443379162002,
+          "term": 0.00019360891354568518
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 9533,
+        "pooled_ratio": 0.7330749859002592,
+        "outcome_months": 10
+      },
+      {
+        "month": "2016-11",
+        "n_scored": 978,
+        "psi": {
+          "purpose": 0.14480892522750555,
+          "int_rate": 0.13068927006164358,
+          "grade": 0.0867423532799872,
+          "dti": 0.07821441414748592,
+          "revol_util": 0.06476673001537955,
+          "loan_amount": 0.040029134836592456,
+          "fico": 0.03679814990554544,
+          "open_acc": 0.028335784738387913,
+          "annual_income": 0.02777800150800742,
+          "home_ownership": 0.019111509391957982,
+          "emp_length": 0.016547703865572055,
+          "term": 0.0002492812667513999
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 10584,
+        "pooled_ratio": 0.748836826777186,
+        "outcome_months": 11
+      },
+      {
+        "month": "2016-12",
+        "n_scored": 1044,
+        "psi": {
+          "int_rate": 0.1268628442561775,
+          "purpose": 0.121984589058926,
+          "revol_util": 0.11715670674744931,
+          "dti": 0.07687379173750301,
+          "loan_amount": 0.04682155412502497,
+          "grade": 0.04451726235045565,
+          "annual_income": 0.04359623218352059,
+          "open_acc": 0.0329515113619439,
+          "fico": 0.02562224882820304,
+          "emp_length": 0.02444450633468292,
+          "home_ownership": 0.013727951623017745,
+          "term": 0.002331821419368325
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 11878,
+        "pooled_ratio": 0.7489237374406634,
+        "outcome_months": 12
+      },
+      {
+        "month": "2017-01",
+        "n_scored": 869,
+        "psi": {
+          "int_rate": 0.1589598088107219,
+          "purpose": 0.13940459549778628,
+          "dti": 0.0881708677866142,
+          "revol_util": 0.08489307207392449,
+          "annual_income": 0.07080410935485967,
+          "open_acc": 0.06578655200650632,
+          "loan_amount": 0.05232864086498212,
+          "fico": 0.03589217383333708,
+          "grade": 0.031426105481968176,
+          "home_ownership": 0.01758968464593381,
+          "emp_length": 0.012882451054494887,
+          "term": 4.7407744330265404e-07
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 12832,
+        "pooled_ratio": 0.7478874029209425,
+        "outcome_months": 13
+      },
+      {
+        "month": "2017-02",
+        "n_scored": 813,
+        "psi": {
+          "int_rate": 0.17689369098468294,
+          "purpose": 0.12549739373106483,
+          "revol_util": 0.1196643752574706,
+          "dti": 0.08982118225645583,
+          "loan_amount": 0.08240829684481216,
+          "annual_income": 0.059044902793919066,
+          "grade": 0.05660218657924027,
+          "open_acc": 0.049684607517475964,
+          "fico": 0.03988650442244308,
+          "home_ownership": 0.023818674635098618,
+          "emp_length": 0.018432664016606943,
+          "term": 0.011389077189707959
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 13913,
+        "pooled_ratio": 0.7435821626247342,
+        "outcome_months": 14
+      },
+      {
+        "month": "2017-03",
+        "n_scored": 1025,
+        "psi": {
+          "int_rate": 0.16816844148837623,
+          "purpose": 0.14519660094994058,
+          "revol_util": 0.13951333557824164,
+          "grade": 0.06480134801756018,
+          "dti": 0.059699515022501176,
+          "loan_amount": 0.04669731929658699,
+          "annual_income": 0.046114552515532155,
+          "open_acc": 0.041761622967804994,
+          "home_ownership": 0.027621192707686495,
+          "emp_length": 0.017494378331266495,
+          "fico": 0.016572224726601793,
+          "term": 0.00888409596207064
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 15674,
+        "pooled_ratio": 0.748655874757053,
+        "outcome_months": 15
+      },
+      {
+        "month": "2017-04",
+        "n_scored": 821,
+        "psi": {
+          "purpose": 0.15623407444871623,
+          "dti": 0.12389179441227031,
+          "int_rate": 0.12009981096321863,
+          "revol_util": 0.0857896427398992,
+          "grade": 0.0830810744927479,
+          "open_acc": 0.05542026863051224,
+          "annual_income": 0.044246965837801064,
+          "loan_amount": 0.04037800741710136,
+          "home_ownership": 0.02271485226482651,
+          "emp_length": 0.01825667926605548,
+          "fico": 0.012895500540096085,
+          "term": 0.012391111006202606
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 16664,
+        "pooled_ratio": 0.7353169854305641,
+        "outcome_months": 16
+      },
+      {
+        "month": "2017-05",
+        "n_scored": 1118,
+        "psi": {
+          "purpose": 0.1521603783292529,
+          "int_rate": 0.12068923407478775,
+          "dti": 0.09227701501233032,
+          "grade": 0.08395535864370442,
+          "revol_util": 0.07491757047129362,
+          "open_acc": 0.047506184459397686,
+          "loan_amount": 0.038418875946020226,
+          "annual_income": 0.033965848597874014,
+          "fico": 0.030837591160588707,
+          "emp_length": 0.022922896541887415,
+          "home_ownership": 0.0084485060186332,
+          "term": 0.004084428739094193
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 17457,
+        "pooled_ratio": 0.735304969141124,
+        "outcome_months": 17
+      },
+      {
+        "month": "2017-06",
+        "n_scored": 1054,
+        "psi": {
+          "purpose": 0.1698554494728567,
+          "int_rate": 0.1489936888349532,
+          "revol_util": 0.12419155028819312,
+          "dti": 0.09048619994769835,
+          "annual_income": 0.05954295626826736,
+          "loan_amount": 0.05312539732445283,
+          "open_acc": 0.049594225669229004,
+          "grade": 0.04827183223800842,
+          "emp_length": 0.03154076161486048,
+          "fico": 0.027893894627154733,
+          "home_ownership": 0.014620621646959925,
+          "term": 0.0024102433277652354
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 18365,
+        "pooled_ratio": 0.72648200467511,
+        "outcome_months": 18
+      },
+      {
+        "month": "2017-07",
+        "n_scored": 1126,
+        "psi": {
+          "int_rate": 0.15025371373908336,
+          "purpose": 0.14801216033415587,
+          "revol_util": 0.11288661082648796,
+          "dti": 0.10200979274358749,
+          "grade": 0.09156703171304419,
+          "loan_amount": 0.05152110985407122,
+          "open_acc": 0.039761392265376595,
+          "emp_length": 0.031682922819661785,
+          "fico": 0.026773201932372623,
+          "annual_income": 0.024940624675344462,
+          "term": 0.017095018074340183,
+          "home_ownership": 0.016695905900262657
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 19354,
+        "pooled_ratio": 0.7219945417892251,
+        "outcome_months": 19
+      },
+      {
+        "month": "2017-08",
+        "n_scored": 1209,
+        "psi": {
+          "int_rate": 0.1530942595343868,
+          "purpose": 0.14257412686448392,
+          "revol_util": 0.12156209309989574,
+          "dti": 0.07972272908913718,
+          "grade": 0.07436194152724926,
+          "loan_amount": 0.06823454174139683,
+          "annual_income": 0.0367763084064429,
+          "emp_length": 0.026098095424112604,
+          "open_acc": 0.023082145120317563,
+          "fico": 0.014292876317154864,
+          "home_ownership": 0.011423060986617934,
+          "term": 0.0007514787494593057
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 20343,
+        "pooled_ratio": 0.7273277518021558,
+        "outcome_months": 20
+      },
+      {
+        "month": "2017-09",
+        "n_scored": 1095,
+        "psi": {
+          "int_rate": 0.1679242605451976,
+          "purpose": 0.1550576596551175,
+          "revol_util": 0.1485390515543966,
+          "dti": 0.11311337673348934,
+          "emp_length": 0.0806441884311011,
+          "grade": 0.06112075785512683,
+          "term": 0.04485771646150559,
+          "loan_amount": 0.04382365980247263,
+          "open_acc": 0.042826040978453994,
+          "annual_income": 0.03598230909331778,
+          "home_ownership": 0.029127765801630436,
+          "fico": 0.015849857798510444
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 21114,
+        "pooled_ratio": 0.725341864207674,
+        "outcome_months": 21
+      },
+      {
+        "month": "2017-10",
+        "n_scored": 1054,
+        "psi": {
+          "revol_util": 0.23547046017156933,
+          "int_rate": 0.17837982716741668,
+          "purpose": 0.15752848936080843,
+          "dti": 0.13325547324278575,
+          "loan_amount": 0.09616333328831062,
+          "emp_length": 0.059122441500745734,
+          "open_acc": 0.050773085447089715,
+          "grade": 0.039140593899767505,
+          "fico": 0.03907256863825415,
+          "home_ownership": 0.028624873526945573,
+          "annual_income": 0.02781011294401116,
+          "term": 0.017324309040924565
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 22026,
+        "pooled_ratio": 0.7290620505094005,
+        "outcome_months": 22
+      },
+      {
+        "month": "2017-11",
+        "n_scored": 1150,
+        "psi": {
+          "revol_util": 0.29716258905679516,
+          "int_rate": 0.2500043546023596,
+          "purpose": 0.16259426696409807,
+          "dti": 0.10904723639357097,
+          "loan_amount": 0.07608927614665578,
+          "open_acc": 0.048413794017398745,
+          "fico": 0.0436137587553342,
+          "grade": 0.039361829944933945,
+          "emp_length": 0.032951439565172186,
+          "home_ownership": 0.032464759503695755,
+          "annual_income": 0.02099940937584291,
+          "term": 0.017525359807941045
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 23004,
+        "pooled_ratio": 0.7303634725418505,
+        "outcome_months": 23
+      },
+      {
+        "month": "2017-12",
+        "n_scored": 1007,
+        "psi": {
+          "revol_util": 0.2852502139063198,
+          "int_rate": 0.22480533507066708,
+          "purpose": 0.15377905444263518,
+          "dti": 0.12272839356729827,
+          "loan_amount": 0.11614211915410351,
+          "grade": 0.09355825234732028,
+          "fico": 0.05748910527005552,
+          "open_acc": 0.04044939359153613,
+          "home_ownership": 0.037007982031363205,
+          "emp_length": 0.026484513901111766,
+          "annual_income": 0.022526045253333626,
+          "term": 0.019081086900931573
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 24048,
+        "pooled_ratio": 0.7381406633876374,
+        "outcome_months": 24
+      },
+      {
+        "month": "2018-01",
+        "n_scored": 980,
+        "psi": {
+          "revol_util": 0.2938675513277246,
+          "int_rate": 0.26051417563028684,
+          "purpose": 0.15767646821393877,
+          "grade": 0.11787410287339084,
+          "loan_amount": 0.10759385049958367,
+          "dti": 0.07951497090357952,
+          "fico": 0.05979562903944256,
+          "annual_income": 0.03958979958002602,
+          "open_acc": 0.03175366174113902,
+          "term": 0.027947098863061466,
+          "home_ownership": 0.02277760884809228,
+          "emp_length": 0.019506343275805707
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 24917,
+        "pooled_ratio": 0.7445040212953651,
+        "outcome_months": 25
+      },
+      {
+        "month": "2018-02",
+        "n_scored": 909,
+        "psi": {
+          "int_rate": 0.27195586946086175,
+          "revol_util": 0.24818158625671521,
+          "purpose": 0.1449490903346693,
+          "loan_amount": 0.12621572335436218,
+          "dti": 0.09973517286104522,
+          "grade": 0.06576850778002197,
+          "open_acc": 0.04660028674591108,
+          "fico": 0.04538230861431987,
+          "home_ownership": 0.03350628136630317,
+          "emp_length": 0.024903983479416157,
+          "term": 0.022881979872238677,
+          "annual_income": 0.021850064914173222
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 25730,
+        "pooled_ratio": 0.7426316205252013,
+        "outcome_months": 26
+      },
+      {
+        "month": "2018-03",
+        "n_scored": 1026,
+        "psi": {
+          "revol_util": 0.3227790047810822,
+          "int_rate": 0.31534892338949205,
+          "purpose": 0.194172017695818,
+          "grade": 0.1782579649507368,
+          "loan_amount": 0.13306337921103734,
+          "dti": 0.10002413988238232,
+          "fico": 0.09512256752906947,
+          "annual_income": 0.06748209657844109,
+          "open_acc": 0.04097215054430134,
+          "home_ownership": 0.0308911522749338,
+          "term": 0.022302723306089345,
+          "emp_length": 0.019489854662965503
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 26755,
+        "pooled_ratio": 0.7475432891491878,
+        "outcome_months": 27
+      },
+      {
+        "month": "2018-04",
+        "n_scored": 1186,
+        "psi": {
+          "revol_util": 0.3054427343191682,
+          "int_rate": 0.2303193382195774,
+          "purpose": 0.17240645725373077,
+          "loan_amount": 0.11585757331450719,
+          "dti": 0.10116812270257136,
+          "grade": 0.08313691125207336,
+          "fico": 0.05240808743063783,
+          "open_acc": 0.04335705911238026,
+          "annual_income": 0.0369824075509476,
+          "home_ownership": 0.02694674011715254,
+          "term": 0.011429269229668533,
+          "emp_length": 0.008555179451646366
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 27576,
+        "pooled_ratio": 0.748861169064245,
+        "outcome_months": 28
+      },
+      {
+        "month": "2018-05",
+        "n_scored": 1244,
+        "psi": {
+          "revol_util": 0.29199579207549076,
+          "int_rate": 0.23407311197607814,
+          "purpose": 0.17437657574990667,
+          "grade": 0.14788032954789154,
+          "loan_amount": 0.12506576249943407,
+          "dti": 0.06953030026025109,
+          "open_acc": 0.039571172241173104,
+          "fico": 0.03689925976867023,
+          "annual_income": 0.03210809508114731,
+          "home_ownership": 0.030176682013974346,
+          "emp_length": 0.017988456368827305,
+          "term": 0.017508363969481362
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 28694,
+        "pooled_ratio": 0.7461325357262398,
+        "outcome_months": 29
+      },
+      {
+        "month": "2018-06",
+        "n_scored": 1168,
+        "psi": {
+          "revol_util": 0.4096614348157051,
+          "int_rate": 0.23545678389480895,
+          "purpose": 0.18637384538720647,
+          "grade": 0.161131354022582,
+          "loan_amount": 0.12256082939985982,
+          "dti": 0.05868625249445227,
+          "home_ownership": 0.052129526328511776,
+          "fico": 0.051794347757814774,
+          "annual_income": 0.03852639184883613,
+          "open_acc": 0.03839543382800257,
+          "term": 0.01636963660865334,
+          "emp_length": 0.004811987985037821
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 29748,
+        "pooled_ratio": 0.7423755837747326,
+        "outcome_months": 30
+      },
+      {
+        "month": "2018-07",
+        "n_scored": 1187,
+        "psi": {
+          "int_rate": 0.31163786853715814,
+          "revol_util": 0.24403814387470132,
+          "purpose": 0.16855365106301584,
+          "grade": 0.13271458116842122,
+          "loan_amount": 0.12547857343490407,
+          "dti": 0.11460989804453325,
+          "home_ownership": 0.03829161905495453,
+          "open_acc": 0.03793504542792645,
+          "annual_income": 0.03584266590710457,
+          "fico": 0.031938075832651854,
+          "emp_length": 0.02026563432061572,
+          "term": 0.012954355085362074
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 30874,
+        "pooled_ratio": 0.7465856605054025,
+        "outcome_months": 31
+      },
+      {
+        "month": "2018-08",
+        "n_scored": 1262,
+        "psi": {
+          "int_rate": 0.3832842856381092,
+          "revol_util": 0.2312678037743207,
+          "purpose": 0.1765473329234474,
+          "loan_amount": 0.13237484385165457,
+          "grade": 0.1310464788472726,
+          "dti": 0.07751433527817171,
+          "annual_income": 0.062181071775833166,
+          "open_acc": 0.041723962934935056,
+          "fico": 0.035653797102447385,
+          "term": 0.02322303644437317,
+          "emp_length": 0.015418787339032316,
+          "home_ownership": 0.0143102158573583
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 32083,
+        "pooled_ratio": 0.7509852936699443,
+        "outcome_months": 32
+      },
+      {
+        "month": "2018-09",
+        "n_scored": 1075,
+        "psi": {
+          "revol_util": 0.31908759935510894,
+          "int_rate": 0.3167577764876848,
+          "grade": 0.2195003971034966,
+          "purpose": 0.17125800498993882,
+          "loan_amount": 0.13470037949383115,
+          "dti": 0.10373487215784281,
+          "open_acc": 0.06418475241419619,
+          "annual_income": 0.0533722694048676,
+          "fico": 0.04291342909416912,
+          "term": 0.041334004107674,
+          "emp_length": 0.019232946481183368,
+          "home_ownership": 0.016878944206253417
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 33178,
+        "pooled_ratio": 0.7494026982800144,
+        "outcome_months": 33
+      },
+      {
+        "month": "2018-10",
+        "n_scored": 1306,
+        "psi": {
+          "int_rate": 0.45988721553294143,
+          "revol_util": 0.28251789245178255,
+          "grade": 0.20641104230912397,
+          "purpose": 0.16421985083158164,
+          "loan_amount": 0.13817283072892503,
+          "dti": 0.08950151948069243,
+          "emp_length": 0.07617046123272124,
+          "open_acc": 0.06477402067141488,
+          "annual_income": 0.05288951256630014,
+          "fico": 0.04552510115864535,
+          "home_ownership": 0.0128443572723444,
+          "term": 0.008898831536651603
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 34232,
+        "pooled_ratio": 0.7527998946558125,
+        "outcome_months": 34
+      },
+      {
+        "month": "2018-11",
+        "n_scored": 1150,
+        "psi": {
+          "grade": 0.2538578588075704,
+          "revol_util": 0.22303840563283758,
+          "int_rate": 0.1735481664157437,
+          "purpose": 0.15860326105036548,
+          "loan_amount": 0.15122493937056913,
+          "dti": 0.09894265165952995,
+          "emp_length": 0.08883135748388447,
+          "annual_income": 0.07900116738420275,
+          "open_acc": 0.04118170543766563,
+          "fico": 0.038145683130423665,
+          "term": 0.03424504071733111,
+          "home_ownership": 0.012278162031654369
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 35382,
+        "pooled_ratio": 0.7509388138715127,
+        "outcome_months": 35
+      },
+      {
+        "month": "2018-12",
+        "n_scored": 1093,
+        "psi": {
+          "revol_util": 0.3549939649532082,
+          "grade": 0.19143682802980835,
+          "int_rate": 0.1815691302347667,
+          "purpose": 0.16782292361007017,
+          "loan_amount": 0.12709488085681084,
+          "dti": 0.10758786738850604,
+          "annual_income": 0.05181711105948125,
+          "emp_length": 0.051430252429435885,
+          "fico": 0.042208632536017636,
+          "open_acc": 0.03886892339245824,
+          "term": 0.029608696489962612,
+          "home_ownership": 0.017283367122525806
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 36389,
+        "pooled_ratio": 0.7540140806111811,
+        "outcome_months": 36
+      }
+    ],
+    "final_calibration_by_year": {
+      "2015": {
+        "n": 11878,
+        "predicted": 0.04110946933922483,
+        "observed": 0.054891395857888534,
+        "ratio": 0.7489237374406634
+      },
+      "2016": {
+        "n": 12170,
+        "predicted": 0.0432133931539278,
+        "observed": 0.05932621199671323,
+        "ratio": 0.7284030397275641
+      },
+      "2017": {
+        "n": 12341,
+        "predicted": 0.044597191943407104,
+        "observed": 0.056802528158171946,
+        "ratio": 0.785126884127799
+      }
+    }
+  },
+  "calibrated": {
+    "calibrated": true,
+    "loans_scored": 49675,
+    "loans_rejected_by_validation": 25,
+    "first_alerts": {
+      "psi_int_rate": {
+        "month": "2015-11",
+        "psi": 0.2551764977697212
+      },
+      "calibration": {
+        "month": "2016-08",
+        "outcome_months": 8,
+        "loans_with_outcomes": 7348,
+        "ratio": 0.842426351844327
+      },
+      "psi_revol_util": {
+        "month": "2017-11",
+        "psi": 0.29716258905679516
+      },
+      "psi_grade": {
+        "month": "2018-11",
+        "psi": 0.2538578588075704
+      }
+    },
+    "final_calibration": {
+      "n": 36389,
+      "predicted": 0.04925553436649112,
+      "observed": 0.05702272664816291,
+      "ratio": 0.8637877783432507
+    },
+    "final_calibration_by_month": [
+      {
+        "month": "2015-01",
+        "n": 932,
+        "predicted": 0.04895139072364402,
+        "observed": 0.04291845493562232,
+        "ratio": 1.1405674038609055
+      },
+      {
+        "month": "2015-02",
+        "n": 649,
+        "predicted": 0.048731603002261425,
+        "observed": 0.060092449922958396,
+        "ratio": 0.8109438550889145
+      },
+      {
+        "month": "2015-03",
+        "n": 717,
+        "predicted": 0.047536334626996926,
+        "observed": 0.04881450488145049,
+        "ratio": 0.9738157693587656
+      },
+      {
+        "month": "2015-04",
+        "n": 1044,
+        "predicted": 0.048873216347078065,
+        "observed": 0.06800766283524905,
+        "ratio": 0.7186427868499929
+      },
+      {
+        "month": "2015-05",
+        "n": 953,
+        "predicted": 0.04984928174845996,
+        "observed": 0.05666316894018888,
+        "ratio": 0.879747509375599
+      },
+      {
+        "month": "2015-06",
+        "n": 799,
+        "predicted": 0.04786700838012381,
+        "observed": 0.05131414267834793,
+        "ratio": 0.9328229194077786
+      },
+      {
+        "month": "2015-07",
+        "n": 1280,
+        "predicted": 0.04835811268177456,
+        "observed": 0.065625,
+        "ratio": 0.7368855265794219
+      },
+      {
+        "month": "2015-08",
+        "n": 974,
+        "predicted": 0.046711226639448794,
+        "observed": 0.059548254620123205,
+        "ratio": 0.7844264611521229
+      },
+      {
+        "month": "2015-09",
+        "n": 798,
+        "predicted": 0.045147233062851296,
+        "observed": 0.05639097744360902,
+        "ratio": 0.8006109329812297
+      },
+      {
+        "month": "2015-10",
+        "n": 1387,
+        "predicted": 0.04445894835400974,
+        "observed": 0.05191059841384282,
+        "ratio": 0.8564522412084933
+      },
+      {
+        "month": "2015-11",
+        "n": 1051,
+        "predicted": 0.044431268073857895,
+        "observed": 0.04091341579448145,
+        "ratio": 1.0859828545494103
+      },
+      {
+        "month": "2015-12",
+        "n": 1294,
+        "predicted": 0.04650491073598078,
+        "observed": 0.05409582689335394,
+        "ratio": 0.8596764927479876
+      },
+      {
+        "month": "2016-01",
+        "n": 954,
+        "predicted": 0.043266645447296435,
+        "observed": 0.051362683438155136,
+        "ratio": 0.8423750970759347
+      },
+      {
+        "month": "2016-02",
+        "n": 1081,
+        "predicted": 0.04726921119877729,
+        "observed": 0.05920444033302498,
+        "ratio": 0.7984065204043477
+      },
+      {
+        "month": "2016-03",
+        "n": 1761,
+        "predicted": 0.04878483447405987,
+        "observed": 0.05394662123793299,
+        "ratio": 0.9043167737770466
+      },
+      {
+        "month": "2016-04",
+        "n": 990,
+        "predicted": 0.047993516452381084,
+        "observed": 0.07272727272727272,
+        "ratio": 0.65991085122024
+      },
+      {
+        "month": "2016-05",
+        "n": 793,
+        "predicted": 0.047780021268895786,
+        "observed": 0.05674653215636822,
+        "ratio": 0.8419901525829858
+      },
+      {
+        "month": "2016-06",
+        "n": 908,
+        "predicted": 0.0468549084503543,
+        "observed": 0.06938325991189427,
+        "ratio": 0.6753056646495509
+      },
+      {
+        "month": "2016-07",
+        "n": 989,
+        "predicted": 0.05309329893499718,
+        "observed": 0.07077856420626896,
+        "ratio": 0.750132466381603
+      },
+      {
+        "month": "2016-08",
+        "n": 989,
+        "predicted": 0.05147280055275598,
+        "observed": 0.05358948432760364,
+        "ratio": 0.9605018820127484
+      },
+      {
+        "month": "2016-09",
+        "n": 771,
+        "predicted": 0.05469597995423665,
+        "observed": 0.07003891050583658,
+        "ratio": 0.7809370471243787
+      },
+      {
+        "month": "2016-10",
+        "n": 912,
+        "predicted": 0.05141512691978692,
+        "observed": 0.05482456140350877,
+        "ratio": 0.9378119150169134
+      },
+      {
+        "month": "2016-11",
+        "n": 978,
+        "predicted": 0.04983973586149556,
+        "observed": 0.05725971370143149,
+        "ratio": 0.8704153870096902
+      },
+      {
+        "month": "2016-12",
+        "n": 1044,
+        "predicted": 0.0525185507590091,
+        "observed": 0.04885057471264368,
+        "ratio": 1.0750856273020686
+      },
+      {
+        "month": "2017-01",
+        "n": 869,
+        "predicted": 0.05074648382791171,
+        "observed": 0.04602991944764097,
+        "ratio": 1.102467361161382
+      },
+      {
+        "month": "2017-02",
+        "n": 813,
+        "predicted": 0.0496245414792971,
+        "observed": 0.06273062730627306,
+        "ratio": 0.7910735729935009
+      },
+      {
+        "month": "2017-03",
+        "n": 1025,
+        "predicted": 0.049793187282823496,
+        "observed": 0.04878048780487805,
+        "ratio": 1.0207603392978817
+      },
+      {
+        "month": "2017-04",
+        "n": 821,
+        "predicted": 0.04876892101905015,
+        "observed": 0.0535931790499391,
+        "ratio": 0.9099837308327312
+      },
+      {
+        "month": "2017-05",
+        "n": 1118,
+        "predicted": 0.051394224796877074,
+        "observed": 0.06529516994633273,
+        "ratio": 0.7871060729165558
+      },
+      {
+        "month": "2017-06",
+        "n": 1054,
+        "predicted": 0.05059534633831668,
+        "observed": 0.06736242884250475,
+        "ratio": 0.7510914794448701
+      },
+      {
+        "month": "2017-07",
+        "n": 1126,
+        "predicted": 0.052075454750430364,
+        "observed": 0.052397868561278864,
+        "ratio": 0.9938468143895693
+      },
+      {
+        "month": "2017-08",
+        "n": 1209,
+        "predicted": 0.05001367667644121,
+        "observed": 0.04962779156327544,
+        "ratio": 1.0077755850302903
+      },
+      {
+        "month": "2017-09",
+        "n": 1095,
+        "predicted": 0.05646325251860726,
+        "observed": 0.06940639269406393,
+        "ratio": 0.8135165987878282
+      },
+      {
+        "month": "2017-10",
+        "n": 1054,
+        "predicted": 0.05113774240800966,
+        "observed": 0.051233396584440226,
+        "ratio": 0.9981329721859664
+      },
+      {
+        "month": "2017-11",
+        "n": 1150,
+        "predicted": 0.0502097821112125,
+        "observed": 0.06260869565217392,
+        "ratio": 0.801961797609644
+      },
+      {
+        "month": "2017-12",
+        "n": 1007,
+        "predicted": 0.05077387418440218,
+        "observed": 0.0506454816285998,
+        "ratio": 1.0025351236018234
+      }
+    ],
+    "psi_full_period": [
+      {
+        "feature": "purpose",
+        "psi": 0.12532449290373934,
+        "status": "watch"
+      },
+      {
+        "feature": "int_rate",
+        "psi": 0.11318581934455858,
+        "status": "watch"
+      },
+      {
+        "feature": "revol_util",
+        "psi": 0.1093347538201293,
+        "status": "watch"
+      },
+      {
+        "feature": "dti",
+        "psi": 0.08944399502944861,
+        "status": "ok"
+      },
+      {
+        "feature": "loan_amount",
+        "psi": 0.050185173351460034,
+        "status": "ok"
+      },
+      {
+        "feature": "open_acc",
+        "psi": 0.03491748671397608,
+        "status": "ok"
+      },
+      {
+        "feature": "grade",
+        "psi": 0.030844711688297947,
+        "status": "ok"
+      },
+      {
+        "feature": "annual_income",
+        "psi": 0.025580327940153982,
+        "status": "ok"
+      },
+      {
+        "feature": "home_ownership",
+        "psi": 0.021795044679751133,
+        "status": "ok"
+      },
+      {
+        "feature": "emp_length",
+        "psi": 0.017003220241145953,
+        "status": "ok"
+      },
+      {
+        "feature": "term",
+        "psi": 0.013542452976466522,
+        "status": "ok"
+      },
+      {
+        "feature": "fico",
+        "psi": 0.011964835161385379,
+        "status": "ok"
+      }
+    ],
+    "latency_ms_single_request": {
+      "p50": 20.222541500004354,
+      "p95": 22.539910700002963,
+      "n": 300
+    },
+    "throughput_loans_per_s": 842.6226815405516,
+    "timeline": [
+      {
+        "month": "2015-01",
+        "n_scored": 932,
+        "psi": {
+          "purpose": 0.18828599102986615,
+          "dti": 0.16534487747848214,
+          "int_rate": 0.13374084373860257,
+          "fico": 0.1047228098850957,
+          "open_acc": 0.0645945999219813,
+          "loan_amount": 0.04473438732119103,
+          "term": 0.04260142998054409,
+          "emp_length": 0.03440767955766978,
+          "grade": 0.030493837713853035,
+          "revol_util": 0.021112651153108876,
+          "home_ownership": 0.013251221556861176,
+          "annual_income": 0.013199165212039288
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-02",
+        "n_scored": 649,
+        "psi": {
+          "purpose": 0.1692286990401735,
+          "int_rate": 0.13082318376690483,
+          "dti": 0.12509416065444498,
+          "fico": 0.12188385391690618,
+          "loan_amount": 0.0772668634388141,
+          "grade": 0.06359643097740031,
+          "open_acc": 0.03688590720644813,
+          "revol_util": 0.030980317254610527,
+          "term": 0.03024231704717671,
+          "home_ownership": 0.021031686979318762,
+          "annual_income": 0.017171339057874695,
+          "emp_length": 0.013411029314612088
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-03",
+        "n_scored": 717,
+        "psi": {
+          "purpose": 0.17278216218104936,
+          "int_rate": 0.1578110848780308,
+          "dti": 0.15071808952906998,
+          "fico": 0.0897489339062444,
+          "open_acc": 0.0705366437621501,
+          "term": 0.05091192204500617,
+          "grade": 0.04347493078661603,
+          "loan_amount": 0.04007533866753954,
+          "emp_length": 0.025296318199801215,
+          "revol_util": 0.020086362317009998,
+          "annual_income": 0.013847123226190628,
+          "home_ownership": 0.010942788603892303
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-04",
+        "n_scored": 1044,
+        "psi": {
+          "purpose": 0.14981990880009557,
+          "int_rate": 0.14748602997585997,
+          "dti": 0.13069142711486814,
+          "open_acc": 0.08287330109573743,
+          "loan_amount": 0.07585501791775992,
+          "term": 0.0616667314459162,
+          "fico": 0.05297243841923634,
+          "grade": 0.04623176496604684,
+          "revol_util": 0.020570294489162883,
+          "annual_income": 0.016569851847438873,
+          "home_ownership": 0.016179034017592738,
+          "emp_length": 0.011548755086522977
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-05",
+        "n_scored": 953,
+        "psi": {
+          "purpose": 0.16931311296725837,
+          "int_rate": 0.16423429578741083,
+          "dti": 0.11915880422341639,
+          "fico": 0.08586573750336823,
+          "open_acc": 0.07186279201350317,
+          "grade": 0.06779304051854386,
+          "revol_util": 0.03965436721123114,
+          "home_ownership": 0.02882823837855793,
+          "loan_amount": 0.027951040151924983,
+          "emp_length": 0.017183532865253762,
+          "term": 0.01338682426827565,
+          "annual_income": 0.005316557879457647
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-06",
+        "n_scored": 799,
+        "psi": {
+          "int_rate": 0.2256273083957181,
+          "purpose": 0.15515170454374166,
+          "dti": 0.10555682951935541,
+          "revol_util": 0.07519212753990452,
+          "open_acc": 0.06570771027832573,
+          "fico": 0.05913447872696716,
+          "grade": 0.047109932354896265,
+          "annual_income": 0.027161551605619606,
+          "home_ownership": 0.02320783623902506,
+          "emp_length": 0.01613729382175749,
+          "loan_amount": 0.01503971656665955,
+          "term": 0.013235240339437924
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-07",
+        "n_scored": 1280,
+        "psi": {
+          "dti": 0.1705732796860785,
+          "purpose": 0.16666312697173694,
+          "int_rate": 0.12597337826646082,
+          "open_acc": 0.06374198243382047,
+          "fico": 0.059348751727695874,
+          "revol_util": 0.04090954659517165,
+          "loan_amount": 0.03251287705684094,
+          "term": 0.025582605980594135,
+          "grade": 0.02443239615531918,
+          "emp_length": 0.014045733296723659,
+          "home_ownership": 0.010634000879215427,
+          "annual_income": 0.009505890716586042
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-08",
+        "n_scored": 974,
+        "psi": {
+          "int_rate": 0.19238447114408444,
+          "purpose": 0.19105929204799027,
+          "dti": 0.11945069101336807,
+          "loan_amount": 0.06531831078684384,
+          "fico": 0.05451465514138663,
+          "open_acc": 0.038083476209614726,
+          "term": 0.03570670409355185,
+          "revol_util": 0.03484923650762682,
+          "emp_length": 0.03292384786672958,
+          "annual_income": 0.029831027231432633,
+          "home_ownership": 0.02215979358743927,
+          "grade": 0.014169923982021541
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-09",
+        "n_scored": 798,
+        "psi": {
+          "purpose": 0.21327339380125232,
+          "int_rate": 0.2129097679234185,
+          "dti": 0.10451763150621377,
+          "open_acc": 0.09254642144606877,
+          "loan_amount": 0.08756535633351362,
+          "annual_income": 0.054923618366612206,
+          "revol_util": 0.047402886948524604,
+          "fico": 0.04354118440493297,
+          "term": 0.04213094585463842,
+          "home_ownership": 0.04126908069950681,
+          "emp_length": 0.025926345615510292,
+          "grade": 0.024321502539794117
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-10",
+        "n_scored": 1387,
+        "psi": {
+          "int_rate": 0.24146175511326368,
+          "purpose": 0.16182601957049209,
+          "dti": 0.10750884937287941,
+          "loan_amount": 0.05794681277047117,
+          "fico": 0.04393869775466097,
+          "term": 0.03807708139175778,
+          "annual_income": 0.029227515578553305,
+          "revol_util": 0.027647358936911733,
+          "open_acc": 0.027516347414655973,
+          "home_ownership": 0.015137572547888872,
+          "emp_length": 0.01417651497263906,
+          "grade": 0.00925055460726379
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-11",
+        "n_scored": 1051,
+        "psi": {
+          "int_rate": 0.2551764977697212,
+          "purpose": 0.1443377857619233,
+          "dti": 0.12274375912501154,
+          "open_acc": 0.05741112093703047,
+          "revol_util": 0.047396133451015524,
+          "loan_amount": 0.03636973189547468,
+          "term": 0.03270701367108726,
+          "annual_income": 0.03139216146504749,
+          "emp_length": 0.02385648925189239,
+          "fico": 0.023823075675804658,
+          "home_ownership": 0.02346454984399496,
+          "grade": 0.02319011943078713
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2015-12",
+        "n_scored": 1294,
+        "psi": {
+          "int_rate": 0.20869760221045885,
+          "dti": 0.1434971091669638,
+          "purpose": 0.12518387924273455,
+          "open_acc": 0.09655069906236231,
+          "revol_util": 0.07551124367463101,
+          "fico": 0.048393309344554755,
+          "annual_income": 0.03590375396189654,
+          "home_ownership": 0.028539956647166333,
+          "loan_amount": 0.026502775513523705,
+          "emp_length": 0.025997851198550172,
+          "grade": 0.01698844762688811,
+          "term": 0.016663208103592595
+        },
+        "calibration_status": "no outcomes yet",
+        "calibration_loans": 0,
+        "pooled_ratio": null,
+        "outcome_months": 0
+      },
+      {
+        "month": "2016-01",
+        "n_scored": 954,
+        "psi": {
+          "int_rate": 0.23244137159782885,
+          "purpose": 0.18460202273031923,
+          "dti": 0.13354154417212233,
+          "annual_income": 0.12668189806202118,
+          "open_acc": 0.09878475355854865,
+          "loan_amount": 0.0800774425059288,
+          "revol_util": 0.059181653365564316,
+          "fico": 0.054431757302477624,
+          "home_ownership": 0.04497600399104778,
+          "emp_length": 0.023135808468961006,
+          "grade": 0.01970698835906493,
+          "term": 0.019047849845824385
+        },
+        "calibration_status": "insufficient outcomes",
+        "calibration_loans": 932,
+        "pooled_ratio": 1.1405674038609055,
+        "outcome_months": 1
+      },
+      {
+        "month": "2016-02",
+        "n_scored": 1081,
+        "psi": {
+          "int_rate": 0.21483269969011332,
+          "dti": 0.18093427735185835,
+          "purpose": 0.13188717798125157,
+          "loan_amount": 0.07937494401539816,
+          "open_acc": 0.056623251866674086,
+          "annual_income": 0.04937153657617741,
+          "fico": 0.04457387519933312,
+          "emp_length": 0.028372924440936847,
+          "revol_util": 0.026856444924223084,
+          "grade": 0.019980705811046624,
+          "home_ownership": 0.013896561603825224,
+          "term": 0.003794449446196992
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 1581,
+        "pooled_ratio": 0.977841854467138,
+        "outcome_months": 2
+      },
+      {
+        "month": "2016-03",
+        "n_scored": 1761,
+        "psi": {
+          "int_rate": 0.23670693657049524,
+          "dti": 0.14043424614926264,
+          "purpose": 0.13356962393432198,
+          "revol_util": 0.06637149995607133,
+          "open_acc": 0.06124661984566283,
+          "loan_amount": 0.05416965852359567,
+          "annual_income": 0.035186977774413174,
+          "fico": 0.03181276992861327,
+          "home_ownership": 0.030236681444017886,
+          "grade": 0.025719114172872298,
+          "emp_length": 0.02250247332788618,
+          "term": 0.006490499149885993
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 2298,
+        "pooled_ratio": 0.9766057757057955,
+        "outcome_months": 3
+      },
+      {
+        "month": "2016-04",
+        "n_scored": 990,
+        "psi": {
+          "int_rate": 0.21264554935834676,
+          "purpose": 0.14531796299304367,
+          "dti": 0.1375148102554799,
+          "revol_util": 0.06370312977348438,
+          "open_acc": 0.054455860646351856,
+          "loan_amount": 0.040367364393114,
+          "fico": 0.03855913238005274,
+          "grade": 0.03379882257605475,
+          "emp_length": 0.02631802250762261,
+          "home_ownership": 0.024692164774889478,
+          "annual_income": 0.022602819842647587,
+          "term": 0.0017106642378814782
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 3342,
+        "pooled_ratio": 0.8776037637665416,
+        "outcome_months": 4
+      },
+      {
+        "month": "2016-05",
+        "n_scored": 793,
+        "psi": {
+          "int_rate": 0.27411338238590816,
+          "purpose": 0.14728157757144947,
+          "dti": 0.13640937643671042,
+          "revol_util": 0.09719852601474982,
+          "open_acc": 0.06927250531917167,
+          "home_ownership": 0.06019937791669672,
+          "loan_amount": 0.05822410785180991,
+          "fico": 0.054822028434448784,
+          "emp_length": 0.030410811114948876,
+          "annual_income": 0.029522000765686413,
+          "grade": 0.022139638854468253,
+          "term": 0.0006893925637308422
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 4295,
+        "pooled_ratio": 0.8780881246991319,
+        "outcome_months": 5
+      },
+      {
+        "month": "2016-06",
+        "n_scored": 908,
+        "psi": {
+          "int_rate": 0.26164150331296965,
+          "purpose": 0.15422749996707724,
+          "revol_util": 0.12989027539728532,
+          "loan_amount": 0.0561022105041004,
+          "dti": 0.04482519375755489,
+          "annual_income": 0.04406571171045308,
+          "grade": 0.04161878496029964,
+          "open_acc": 0.022722487120399183,
+          "fico": 0.022219498332715987,
+          "emp_length": 0.02171904387631486,
+          "home_ownership": 0.019847292129671904,
+          "term": 0.0035202951902910075
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 5094,
+        "pooled_ratio": 0.8861028624957551,
+        "outcome_months": 6
+      },
+      {
+        "month": "2016-07",
+        "n_scored": 989,
+        "psi": {
+          "purpose": 0.1538301713355377,
+          "int_rate": 0.12856081219927007,
+          "revol_util": 0.09517004374292792,
+          "grade": 0.06999750154271192,
+          "dti": 0.04488977587387259,
+          "open_acc": 0.04098069742167609,
+          "fico": 0.03905435567945116,
+          "loan_amount": 0.02618442480682706,
+          "home_ownership": 0.021136277576871535,
+          "annual_income": 0.012961443115271132,
+          "term": 0.012145308551602743,
+          "emp_length": 0.006211348605905611
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 6374,
+        "pooled_ratio": 0.851668092668909,
+        "outcome_months": 7
+      },
+      {
+        "month": "2016-08",
+        "n_scored": 989,
+        "psi": {
+          "int_rate": 0.24314985636726089,
+          "purpose": 0.1488038474407956,
+          "revol_util": 0.10348141010484169,
+          "grade": 0.08964164333530426,
+          "dti": 0.05492750236037284,
+          "fico": 0.049978564774143135,
+          "loan_amount": 0.044449932006267005,
+          "home_ownership": 0.03541538928392733,
+          "open_acc": 0.034724006954672905,
+          "annual_income": 0.02028605413585076,
+          "emp_length": 0.019848908850328067,
+          "term": 5.1168621579056335e-05
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 7348,
+        "pooled_ratio": 0.842426351844327,
+        "outcome_months": 8
+      },
+      {
+        "month": "2016-09",
+        "n_scored": 771,
+        "psi": {
+          "purpose": 0.17907396075613202,
+          "int_rate": 0.1624796536050523,
+          "revol_util": 0.1014726079000813,
+          "grade": 0.08301128495850559,
+          "open_acc": 0.06085140009945491,
+          "fico": 0.05782835293764651,
+          "dti": 0.0550987410616487,
+          "annual_income": 0.04374973941230139,
+          "loan_amount": 0.0235231981022229,
+          "home_ownership": 0.02172494289403504,
+          "emp_length": 0.01703237630186238,
+          "term": 0.0001321260718418082
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 8146,
+        "pooled_ratio": 0.8383970288275403,
+        "outcome_months": 9
+      },
+      {
+        "month": "2016-10",
+        "n_scored": 912,
+        "psi": {
+          "revol_util": 0.1551964140175162,
+          "purpose": 0.13305341915027108,
+          "grade": 0.11475342035666325,
+          "dti": 0.10455469142956511,
+          "int_rate": 0.06840566367279204,
+          "annual_income": 0.0602978751997293,
+          "open_acc": 0.05032470867512514,
+          "loan_amount": 0.04380306922859785,
+          "home_ownership": 0.03687229268016912,
+          "fico": 0.028867703007181042,
+          "emp_length": 0.014536443379162002,
+          "term": 0.00019360891354568518
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 9533,
+        "pooled_ratio": 0.8408088568264802,
+        "outcome_months": 10
+      },
+      {
+        "month": "2016-11",
+        "n_scored": 978,
+        "psi": {
+          "purpose": 0.14480892522750555,
+          "int_rate": 0.13068927006164358,
+          "grade": 0.0867423532799872,
+          "dti": 0.07821441414748592,
+          "revol_util": 0.06476673001537955,
+          "loan_amount": 0.040029134836592456,
+          "fico": 0.03679814990554544,
+          "open_acc": 0.028335784738387913,
+          "annual_income": 0.02777800150800742,
+          "home_ownership": 0.019111509391957982,
+          "emp_length": 0.016547703865572055,
+          "term": 0.0002492812667513999
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 10584,
+        "pooled_ratio": 0.8589230868987929,
+        "outcome_months": 11
+      },
+      {
+        "month": "2016-12",
+        "n_scored": 1044,
+        "psi": {
+          "int_rate": 0.1268628442561775,
+          "purpose": 0.121984589058926,
+          "revol_util": 0.11715670674744931,
+          "dti": 0.07687379173750301,
+          "loan_amount": 0.04682155412502497,
+          "grade": 0.04451726235045565,
+          "annual_income": 0.04359623218352059,
+          "open_acc": 0.0329515113619439,
+          "fico": 0.02562224882820304,
+          "emp_length": 0.02444450633468292,
+          "home_ownership": 0.013727951623017745,
+          "term": 0.002331821419368325
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 11878,
+        "pooled_ratio": 0.8590039740298414,
+        "outcome_months": 12
+      },
+      {
+        "month": "2017-01",
+        "n_scored": 869,
+        "psi": {
+          "int_rate": 0.1589598088107219,
+          "purpose": 0.13940459549778628,
+          "dti": 0.0881708677866142,
+          "revol_util": 0.08489307207392449,
+          "annual_income": 0.07080410935485967,
+          "open_acc": 0.06578655200650632,
+          "loan_amount": 0.05232864086498212,
+          "fico": 0.03589217383333708,
+          "grade": 0.031426105481968176,
+          "home_ownership": 0.01758968464593381,
+          "emp_length": 0.012882451054494887,
+          "term": 4.7407744330265404e-07
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 12832,
+        "pooled_ratio": 0.8578416131585982,
+        "outcome_months": 13
+      },
+      {
+        "month": "2017-02",
+        "n_scored": 813,
+        "psi": {
+          "int_rate": 0.17689369098468294,
+          "purpose": 0.12549739373106483,
+          "revol_util": 0.1196643752574706,
+          "dti": 0.08982118225645583,
+          "loan_amount": 0.08240829684481216,
+          "annual_income": 0.059044902793919066,
+          "grade": 0.05660218657924027,
+          "open_acc": 0.049684607517475964,
+          "fico": 0.03988650442244308,
+          "home_ownership": 0.023818674635098618,
+          "emp_length": 0.018432664016606943,
+          "term": 0.011389077189707959
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 13913,
+        "pooled_ratio": 0.8528692655294844,
+        "outcome_months": 14
+      },
+      {
+        "month": "2017-03",
+        "n_scored": 1025,
+        "psi": {
+          "int_rate": 0.16816844148837623,
+          "purpose": 0.14519660094994058,
+          "revol_util": 0.13951333557824164,
+          "grade": 0.06480134801756018,
+          "dti": 0.059699515022501176,
+          "loan_amount": 0.04669731929658699,
+          "annual_income": 0.046114552515532155,
+          "open_acc": 0.041761622967804994,
+          "home_ownership": 0.027621192707686495,
+          "emp_length": 0.017494378331266495,
+          "fico": 0.016572224726601793,
+          "term": 0.00888409596207064
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 15674,
+        "pooled_ratio": 0.8585524205103199,
+        "outcome_months": 15
+      },
+      {
+        "month": "2017-04",
+        "n_scored": 821,
+        "psi": {
+          "purpose": 0.15623407444871623,
+          "dti": 0.12389179441227031,
+          "int_rate": 0.12009981096321863,
+          "revol_util": 0.0857896427398992,
+          "grade": 0.0830810744927479,
+          "open_acc": 0.05542026863051224,
+          "annual_income": 0.044246965837801064,
+          "loan_amount": 0.04037800741710136,
+          "home_ownership": 0.02271485226482651,
+          "emp_length": 0.01825667926605548,
+          "fico": 0.012895500540096085,
+          "term": 0.012391111006202606
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 16664,
+        "pooled_ratio": 0.8432067198784683,
+        "outcome_months": 16
+      },
+      {
+        "month": "2017-05",
+        "n_scored": 1118,
+        "psi": {
+          "purpose": 0.1521603783292529,
+          "int_rate": 0.12068923407478775,
+          "dti": 0.09227701501233032,
+          "grade": 0.08395535864370442,
+          "revol_util": 0.07491757047129362,
+          "open_acc": 0.047506184459397686,
+          "loan_amount": 0.038418875946020226,
+          "annual_income": 0.033965848597874014,
+          "fico": 0.030837591160588707,
+          "emp_length": 0.022922896541887415,
+          "home_ownership": 0.0084485060186332,
+          "term": 0.004084428739094193
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 17457,
+        "pooled_ratio": 0.8431506855608667,
+        "outcome_months": 17
+      },
+      {
+        "month": "2017-06",
+        "n_scored": 1054,
+        "psi": {
+          "purpose": 0.1698554494728567,
+          "int_rate": 0.1489936888349532,
+          "revol_util": 0.12419155028819312,
+          "dti": 0.09048619994769835,
+          "annual_income": 0.05954295626826736,
+          "loan_amount": 0.05312539732445283,
+          "open_acc": 0.049594225669229004,
+          "grade": 0.04827183223800842,
+          "emp_length": 0.03154076161486048,
+          "fico": 0.027893894627154733,
+          "home_ownership": 0.014620621646959925,
+          "term": 0.0024102433277652354
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 18365,
+        "pooled_ratio": 0.8329831506402773,
+        "outcome_months": 18
+      },
+      {
+        "month": "2017-07",
+        "n_scored": 1126,
+        "psi": {
+          "int_rate": 0.15025371373908336,
+          "purpose": 0.14801216033415587,
+          "revol_util": 0.11288661082648796,
+          "dti": 0.10200979274358749,
+          "grade": 0.09156703171304419,
+          "loan_amount": 0.05152110985407122,
+          "open_acc": 0.039761392265376595,
+          "emp_length": 0.031682922819661785,
+          "fico": 0.026773201932372623,
+          "annual_income": 0.024940624675344462,
+          "term": 0.017095018074340183,
+          "home_ownership": 0.016695905900262657
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 19354,
+        "pooled_ratio": 0.8277583327140546,
+        "outcome_months": 19
+      },
+      {
+        "month": "2017-08",
+        "n_scored": 1209,
+        "psi": {
+          "int_rate": 0.1530942595343868,
+          "purpose": 0.14257412686448392,
+          "revol_util": 0.12156209309989574,
+          "dti": 0.07972272908913718,
+          "grade": 0.07436194152724926,
+          "loan_amount": 0.06823454174139683,
+          "annual_income": 0.0367763084064429,
+          "emp_length": 0.026098095424112604,
+          "open_acc": 0.023082145120317563,
+          "fico": 0.014292876317154864,
+          "home_ownership": 0.011423060986617934,
+          "term": 0.0007514787494593057
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 20343,
+        "pooled_ratio": 0.8338076948059125,
+        "outcome_months": 20
+      },
+      {
+        "month": "2017-09",
+        "n_scored": 1095,
+        "psi": {
+          "int_rate": 0.1679242605451976,
+          "purpose": 0.1550576596551175,
+          "revol_util": 0.1485390515543966,
+          "dti": 0.11311337673348934,
+          "emp_length": 0.0806441884311011,
+          "grade": 0.06112075785512683,
+          "term": 0.04485771646150559,
+          "loan_amount": 0.04382365980247263,
+          "open_acc": 0.042826040978453994,
+          "annual_income": 0.03598230909331778,
+          "home_ownership": 0.029127765801630436,
+          "fico": 0.015849857798510444
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 21114,
+        "pooled_ratio": 0.831461749880027,
+        "outcome_months": 21
+      },
+      {
+        "month": "2017-10",
+        "n_scored": 1054,
+        "psi": {
+          "revol_util": 0.23547046017156933,
+          "int_rate": 0.17837982716741668,
+          "purpose": 0.15752848936080843,
+          "dti": 0.13325547324278575,
+          "loan_amount": 0.09616333328831062,
+          "emp_length": 0.059122441500745734,
+          "open_acc": 0.050773085447089715,
+          "grade": 0.039140593899767505,
+          "fico": 0.03907256863825415,
+          "home_ownership": 0.028624873526945573,
+          "annual_income": 0.02781011294401116,
+          "term": 0.017324309040924565
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 22026,
+        "pooled_ratio": 0.8356586782595409,
+        "outcome_months": 22
+      },
+      {
+        "month": "2017-11",
+        "n_scored": 1150,
+        "psi": {
+          "revol_util": 0.29716258905679516,
+          "int_rate": 0.2500043546023596,
+          "purpose": 0.16259426696409807,
+          "dti": 0.10904723639357097,
+          "loan_amount": 0.07608927614665578,
+          "open_acc": 0.048413794017398745,
+          "fico": 0.0436137587553342,
+          "grade": 0.039361829944933945,
+          "emp_length": 0.032951439565172186,
+          "home_ownership": 0.032464759503695755,
+          "annual_income": 0.02099940937584291,
+          "term": 0.017525359807941045
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 23004,
+        "pooled_ratio": 0.8371298616987007,
+        "outcome_months": 23
+      },
+      {
+        "month": "2017-12",
+        "n_scored": 1007,
+        "psi": {
+          "revol_util": 0.2852502139063198,
+          "int_rate": 0.22480533507066708,
+          "purpose": 0.15377905444263518,
+          "dti": 0.12272839356729827,
+          "loan_amount": 0.11614211915410351,
+          "grade": 0.09355825234732028,
+          "fico": 0.05748910527005552,
+          "open_acc": 0.04044939359153613,
+          "home_ownership": 0.037007982031363205,
+          "emp_length": 0.026484513901111766,
+          "annual_income": 0.022526045253333626,
+          "term": 0.019081086900931573
+        },
+        "calibration_status": "alert",
+        "calibration_loans": 24048,
+        "pooled_ratio": 0.8459622809459874,
+        "outcome_months": 24
+      },
+      {
+        "month": "2018-01",
+        "n_scored": 980,
+        "psi": {
+          "revol_util": 0.2938675513277246,
+          "int_rate": 0.26051417563028684,
+          "purpose": 0.15767646821393877,
+          "grade": 0.11787410287339084,
+          "loan_amount": 0.10759385049958367,
+          "dti": 0.07951497090357952,
+          "fico": 0.05979562903944256,
+          "annual_income": 0.03958979958002602,
+          "open_acc": 0.03175366174113902,
+          "term": 0.027947098863061466,
+          "home_ownership": 0.02277760884809228,
+          "emp_length": 0.019506343275805707
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 24917,
+        "pooled_ratio": 0.8532184359732969,
+        "outcome_months": 25
+      },
+      {
+        "month": "2018-02",
+        "n_scored": 909,
+        "psi": {
+          "int_rate": 0.27195586946086175,
+          "revol_util": 0.24818158625671521,
+          "purpose": 0.1449490903346693,
+          "loan_amount": 0.12621572335436218,
+          "dti": 0.09973517286104522,
+          "grade": 0.06576850778002197,
+          "open_acc": 0.04660028674591108,
+          "fico": 0.04538230861431987,
+          "home_ownership": 0.03350628136630317,
+          "emp_length": 0.024903983479416157,
+          "term": 0.022881979872238677,
+          "annual_income": 0.021850064914173222
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 25730,
+        "pooled_ratio": 0.8510550311869695,
+        "outcome_months": 26
+      },
+      {
+        "month": "2018-03",
+        "n_scored": 1026,
+        "psi": {
+          "revol_util": 0.3227790047810822,
+          "int_rate": 0.31534892338949205,
+          "purpose": 0.194172017695818,
+          "grade": 0.1782579649507368,
+          "loan_amount": 0.13306337921103734,
+          "dti": 0.10002413988238232,
+          "fico": 0.09512256752906947,
+          "annual_income": 0.06748209657844109,
+          "open_acc": 0.04097215054430134,
+          "home_ownership": 0.0308911522749338,
+          "term": 0.022302723306089345,
+          "emp_length": 0.019489854662965503
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 26755,
+        "pooled_ratio": 0.856655866438155,
+        "outcome_months": 27
+      },
+      {
+        "month": "2018-04",
+        "n_scored": 1186,
+        "psi": {
+          "revol_util": 0.3054427343191682,
+          "int_rate": 0.2303193382195774,
+          "purpose": 0.17240645725373077,
+          "loan_amount": 0.11585757331450719,
+          "dti": 0.10116812270257136,
+          "grade": 0.08313691125207336,
+          "fico": 0.05240808743063783,
+          "open_acc": 0.04335705911238026,
+          "annual_income": 0.0369824075509476,
+          "home_ownership": 0.02694674011715254,
+          "term": 0.011429269229668533,
+          "emp_length": 0.008555179451646366
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 27576,
+        "pooled_ratio": 0.8581609504877771,
+        "outcome_months": 28
+      },
+      {
+        "month": "2018-05",
+        "n_scored": 1244,
+        "psi": {
+          "revol_util": 0.29199579207549076,
+          "int_rate": 0.23407311197607814,
+          "purpose": 0.17437657574990667,
+          "grade": 0.14788032954789154,
+          "loan_amount": 0.12506576249943407,
+          "dti": 0.06953030026025109,
+          "open_acc": 0.039571172241173104,
+          "fico": 0.03689925976867023,
+          "annual_income": 0.03210809508114731,
+          "home_ownership": 0.030176682013974346,
+          "emp_length": 0.017988456368827305,
+          "term": 0.017508363969481362
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 28694,
+        "pooled_ratio": 0.8549826379493587,
+        "outcome_months": 29
+      },
+      {
+        "month": "2018-06",
+        "n_scored": 1168,
+        "psi": {
+          "revol_util": 0.4096614348157051,
+          "int_rate": 0.23545678389480895,
+          "purpose": 0.18637384538720647,
+          "grade": 0.161131354022582,
+          "loan_amount": 0.12256082939985982,
+          "dti": 0.05868625249445227,
+          "home_ownership": 0.052129526328511776,
+          "fico": 0.051794347757814774,
+          "annual_income": 0.03852639184883613,
+          "open_acc": 0.03839543382800257,
+          "term": 0.01636963660865334,
+          "emp_length": 0.004811987985037821
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 29748,
+        "pooled_ratio": 0.8506512978120604,
+        "outcome_months": 30
+      },
+      {
+        "month": "2018-07",
+        "n_scored": 1187,
+        "psi": {
+          "int_rate": 0.31163786853715814,
+          "revol_util": 0.24403814387470132,
+          "purpose": 0.16855365106301584,
+          "grade": 0.13271458116842122,
+          "loan_amount": 0.12547857343490407,
+          "dti": 0.11460989804453325,
+          "home_ownership": 0.03829161905495453,
+          "open_acc": 0.03793504542792645,
+          "annual_income": 0.03584266590710457,
+          "fico": 0.031938075832651854,
+          "emp_length": 0.02026563432061572,
+          "term": 0.012954355085362074
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 30874,
+        "pooled_ratio": 0.8554461533614774,
+        "outcome_months": 31
+      },
+      {
+        "month": "2018-08",
+        "n_scored": 1262,
+        "psi": {
+          "int_rate": 0.3832842856381092,
+          "revol_util": 0.2312678037743207,
+          "purpose": 0.1765473329234474,
+          "loan_amount": 0.13237484385165457,
+          "grade": 0.1310464788472726,
+          "dti": 0.07751433527817171,
+          "annual_income": 0.062181071775833166,
+          "open_acc": 0.041723962934935056,
+          "fico": 0.035653797102447385,
+          "term": 0.02322303644437317,
+          "emp_length": 0.015418787339032316,
+          "home_ownership": 0.0143102158573583
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 32083,
+        "pooled_ratio": 0.8604624902989796,
+        "outcome_months": 32
+      },
+      {
+        "month": "2018-09",
+        "n_scored": 1075,
+        "psi": {
+          "revol_util": 0.31908759935510894,
+          "int_rate": 0.3167577764876848,
+          "grade": 0.2195003971034966,
+          "purpose": 0.17125800498993882,
+          "loan_amount": 0.13470037949383115,
+          "dti": 0.10373487215784281,
+          "open_acc": 0.06418475241419619,
+          "annual_income": 0.0533722694048676,
+          "fico": 0.04291342909416912,
+          "term": 0.041334004107674,
+          "emp_length": 0.019232946481183368,
+          "home_ownership": 0.016878944206253417
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 33178,
+        "pooled_ratio": 0.8585826758865204,
+        "outcome_months": 33
+      },
+      {
+        "month": "2018-10",
+        "n_scored": 1306,
+        "psi": {
+          "int_rate": 0.45988721553294143,
+          "revol_util": 0.28251789245178255,
+          "grade": 0.20641104230912397,
+          "purpose": 0.16421985083158164,
+          "loan_amount": 0.13817283072892503,
+          "dti": 0.08950151948069243,
+          "emp_length": 0.07617046123272124,
+          "open_acc": 0.06477402067141488,
+          "annual_income": 0.05288951256630014,
+          "fico": 0.04552510115864535,
+          "home_ownership": 0.0128443572723444,
+          "term": 0.008898831536651603
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 34232,
+        "pooled_ratio": 0.8624431861325093,
+        "outcome_months": 34
+      },
+      {
+        "month": "2018-11",
+        "n_scored": 1150,
+        "psi": {
+          "grade": 0.2538578588075704,
+          "revol_util": 0.22303840563283758,
+          "int_rate": 0.1735481664157437,
+          "purpose": 0.15860326105036548,
+          "loan_amount": 0.15122493937056913,
+          "dti": 0.09894265165952995,
+          "emp_length": 0.08883135748388447,
+          "annual_income": 0.07900116738420275,
+          "open_acc": 0.04118170543766563,
+          "fico": 0.038145683130423665,
+          "term": 0.03424504071733111,
+          "home_ownership": 0.012278162031654369
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 35382,
+        "pooled_ratio": 0.8602916742878223,
+        "outcome_months": 35
+      },
+      {
+        "month": "2018-12",
+        "n_scored": 1093,
+        "psi": {
+          "revol_util": 0.3549939649532082,
+          "grade": 0.19143682802980835,
+          "int_rate": 0.1815691302347667,
+          "purpose": 0.16782292361007017,
+          "loan_amount": 0.12709488085681084,
+          "dti": 0.10758786738850604,
+          "annual_income": 0.05181711105948125,
+          "emp_length": 0.051430252429435885,
+          "fico": 0.042208632536017636,
+          "open_acc": 0.03886892339245824,
+          "term": 0.029608696489962612,
+          "home_ownership": 0.017283367122525806
+        },
+        "calibration_status": "ok",
+        "calibration_loans": 36389,
+        "pooled_ratio": 0.8637877783432507,
+        "outcome_months": 36
+      }
+    ],
+    "final_calibration_by_year": {
+      "2015": {
+        "n": 11878,
+        "predicted": 0.04715192718197143,
+        "observed": 0.054891395857888534,
+        "ratio": 0.8590039740298414
+      },
+      "2016": {
+        "n": 12170,
+        "predicted": 0.04948903721876171,
+        "observed": 0.05932621199671323,
+        "ratio": 0.8341850179395153
+      },
+      "2017": {
+        "n": 12341,
+        "predicted": 0.05104995268150546,
+        "observed": 0.056802528158171946,
+        "ratio": 0.8987267703886718
+      }
+    }
+  }
+}

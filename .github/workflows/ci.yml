@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run tests (no Lending Club data needed)
+        run: pytest -q
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t credit-risk-api .
+      - name: Smoke-test the container
+        run: |
+          docker run -d --name api -p 8000:8000 credit-risk-api
+          for i in $(seq 1 60); do curl -fs localhost:8000/health && break; sleep 2; done
+          curl -fs -X POST localhost:8000/v1/score -H 'Content-Type: application/json' \
+            --data @examples/sample_request.json
+          docker logs api | tail -20

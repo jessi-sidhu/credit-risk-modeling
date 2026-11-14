@@ -1,0 +1,17 @@
+# Render Blueprint: one free Docker web service built from this repo's Dockerfile.
+# Create it from the Render dashboard (New > Blueprint, pick this repo); no secrets are needed.
+services:
+  - type: web
+    name: credit-risk-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "60"
+      - key: MAX_BATCH
+        value: "100"
+      # SQLite on the container disk (wiped on restart/redeploy). Set DATABASE_URL to a
+      # Postgres URL yourself to keep the prediction log.

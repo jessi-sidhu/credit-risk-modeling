@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+venv
+data/
+notebooks/
+reports/
+tests/
+**/__pycache__
+**/*.pyc
+*.db
+*.db-journal
+.env
+*_PLAN.md

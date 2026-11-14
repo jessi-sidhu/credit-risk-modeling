@@ -44,5 +44,10 @@ reports/artifacts/random_split/*
 reports/artifacts/survival/*
 !reports/artifacts/survival/*.json
 
+# Phase 3: never commit databases or secrets
+*.db
+*.db-journal
+.env
+
 # Keep folder placeholders
 !**/.gitkeep

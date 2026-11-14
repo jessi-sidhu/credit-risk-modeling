@@ -1,0 +1,15 @@
+{
+  "loan_id": "example-1",
+  "loan_amount": 12000,
+  "term": 36,
+  "int_rate": 13.5,
+  "grade": "C",
+  "emp_length": 4,
+  "home_ownership": "RENT",
+  "annual_income": 52000,
+  "purpose": "debt_consolidation",
+  "dti": 24.5,
+  "fico": 685,
+  "open_acc": 11,
+  "revol_util": 68
+}
