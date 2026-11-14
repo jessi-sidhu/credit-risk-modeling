@@ -8,6 +8,8 @@ POST /v1/outcomes       record outcomes for previously scored loans (labels arri
 GET  /v1/monitoring     input drift (PSI), score drift and calibration from the logs
 GET  /health            liveness and whether the model loaded
 GET  /v1/model          the bundle's model card
+GET  /v1/schema         input fields, types, ranges and allowed categories
+GET  /                  landing page with a scoring form (src/serve/static/index.html)
 
 Every scored application is logged to the database in DATABASE_URL
 (default sqlite:///predictions.db); a logging failure never fails scoring.
@@ -27,13 +29,14 @@ import threading
 import time
 import uuid
 from collections import defaultdict, deque
+from pathlib import Path
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
 from .bundle import ModelBundle, load_bundle
@@ -43,6 +46,8 @@ from .monitoring import monitoring_summary
 from .scoring import LoanApplication, score_many
 
 logger = logging.getLogger("src.serve")
+
+STATIC = Path(__file__).resolve().parent / "static"
 
 MAX_BATCH = int(os.environ.get("MAX_BATCH", 1_000))
 RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", 0))
@@ -254,3 +259,19 @@ def health(request: Request):
 @app.get("/v1/model")
 def model_card(request: Request):
     return {"request_id": request.state.request_id, **_bundle().card}
+
+
+@app.get("/v1/schema")
+def schema(request: Request):
+    """Input fields with types, valid ranges, allowed categories and training caps."""
+    return {"request_id": request.state.request_id, **_bundle().schema}
+
+
+@app.get("/", include_in_schema=False)
+def landing_page():
+    return FileResponse(STATIC / "index.html", media_type="text/html")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return Response(status_code=204)

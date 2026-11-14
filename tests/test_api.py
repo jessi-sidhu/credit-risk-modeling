@@ -105,3 +105,15 @@ def test_rate_limit_returns_429(client, monkeypatch):
     r = client.post("/v1/score", json=APP)
     assert r.status_code == 429 and "Retry-After" in r.headers and r.json()["request_id"]
     assert client.get("/health").status_code == 200            # health is never limited
+
+
+def test_landing_page_and_schema(client):
+    r = client.get("/")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/html")
+    html = r.text
+    assert "<form" in html and "/v1/score" in html and "/docs" in html
+    assert client.get("/favicon.ico").status_code == 204
+    s = client.get("/v1/schema").json()
+    assert s["fields"]["grade"]["allowed"] == list("ABCDEFG")
+    assert "debt_consolidation" in s["fields"]["purpose"]["allowed"]
+    assert s["request_id"]

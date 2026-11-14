@@ -280,7 +280,7 @@ flowchart LR
     M --> R[GET /v1/monitoring<br/>reports/monitoring/report.html]
 ```
 
-**Live API:** https://credit-risk-api-fxk5.onrender.com (interactive docs at [`/docs`](https://credit-risk-api-fxk5.onrender.com/docs)). Hosted on Render's free tier: it sleeps after 15 minutes without traffic, so the first request after a pause takes about a minute. Limited to 60 requests per minute per IP and 100 applications per batch; the prediction log is SQLite on the container disk and resets on each redeploy.
+**Live demo:** https://credit-risk-api-fxk5.onrender.com: a form that scores a loan and draws its default curve ([open with the example loan already scored](https://credit-risk-api-fxk5.onrender.com/#example)); interactive API docs at [`/docs`](https://credit-risk-api-fxk5.onrender.com/docs). Hosted on Render's free tier: it sleeps after 15 minutes without traffic, so the first request after a pause takes about a minute. Limited to 60 requests per minute per IP and 100 applications per batch; the prediction log is SQLite on the container disk and resets on each redeploy.
 
 ### How a request is scored
 
@@ -323,7 +323,7 @@ curl -X POST https://credit-risk-api-fxk5.onrender.com/v1/score \
 }
 ```
 
-Endpoints: `POST /v1/score`, `POST /v1/score/batch` (up to 1,000), `POST /v1/outcomes`, `GET /v1/monitoring`, `GET /v1/model` (model card), `GET /health`; interactive docs at `/docs`.
+Endpoints: `POST /v1/score`, `POST /v1/score/batch` (up to 1,000), `POST /v1/outcomes`, `GET /v1/monitoring`, `GET /v1/model` (model card), `GET /v1/schema` (input fields and allowed values), `GET /health`; a landing page with a scoring form at `/` and interactive docs at `/docs`.
 
 ### Monitoring
 
