@@ -138,7 +138,7 @@ At the 0.5 threshold LR flags 480 loans and LightGBM flags none, so the expected
 
 `notebooks/01`–`05` explore the same data and the same Phase 1 run (EDA, modeling, SHAP and error analysis, calibration, drift). Their findings are written in each notebook's Takeaways cell; the figures they produce are in `reports/figures/`. They only read `reports/artifacts/`, so they cannot change the numbers in this report.
 
-## 8. Phase 2: Time-to-default
+## 8. Time-to-default model
 
 Phase 1 asks *will this loan default?* and has to throw away every loan without a final outcome: of 2.26M accepted loans it keeps 710,794. Phase 2 asks *in which quarter will it default, and what is the expected loss over its life?* That lets every loan stay in:
 
@@ -358,7 +358,118 @@ LGD by grade (2007–2013 charge-offs, `(loan_amnt − total_rec_prncp − recov
 - Richer cycle indicators than national unemployment (state-level unemployment, credit-card delinquency rates, LC's own underwriting changes).
 - Deployment: a FastAPI scoring service with input-drift (PSI) and calibration monitoring.
 
-## 9. Reproduce
+## 9. Serving and monitoring
+
+The Phase 2 LightGBM hazard model runs as a scoring service. Send a loan application and get back its default curve, 12-month and lifetime PD, expected loss and the main reasons for the score. Every request is logged, outcomes can be posted as they arrive, and a monitor checks input drift and calibration.
+
+```mermaid
+flowchart LR
+    C[Client] -->|POST /v1/score| A[FastAPI app]
+    A --> B[(Model bundle<br/>models/pd_survival_v1)]
+    A -->|every prediction| D[(Database<br/>SQLite or Postgres)]
+    C -->|POST /v1/outcomes<br/>labels arrive later| A
+    D --> M[Monitor<br/>PSI + calibration]
+    M --> R[GET /v1/monitoring<br/>reports/monitoring/report.html]
+```
+
+**Live demo:** https://credit-risk-api-fxk5.onrender.com: a form that scores a loan and draws its default curve ([open with the example loan already scored](https://credit-risk-api-fxk5.onrender.com/#example)); interactive API docs at [`/docs`](https://credit-risk-api-fxk5.onrender.com/docs). Hosted on Render's free tier: it sleeps after 15 minutes without traffic, so the first request after a pause takes about a minute. Limited to 60 requests per minute per IP and 100 applications per batch; the prediction log is SQLite on the container disk and resets on each redeploy.
+
+### How a request is scored
+
+1. `LoanApplication` validates the application-time inputs against the bundle's schema (types, ranges, allowed categories; unknown fields are rejected with a 422 naming the field).
+2. The Phase 1 feature engineering adds the four ratio features.
+3. The hazard model gives, for each quarter of the term, the chance of default and of prepayment given the loan is still active.
+4. **Calibrated by default.** The hazard levels are shifted by the log-odds offsets fit on the 2014 cohort (`level_offsets.json`). Phase 2 showed the raw model predicts only ~71–80% of observed defaults on 2015–2018 loans; the offsets close about 30% of that gap. `?calibrated=false` returns the raw model.
+5. Hazards become the default curve (`CIF_default(t) = Σ S(t−1)·h_default(t)`); with EAD from the amortization schedule, LGD by grade and discounting at the loan's rate, they give 12-month and lifetime expected loss (same code as `src/ecl.py`).
+6. Reason codes: the 4 features pushing first-quarter default risk up most (SHAP on the default-class output). Inputs beyond the training 0.1% / 99.9% range are scored at the cap and listed in `warnings`.
+
+Per-request scores match Phase 2's batch prediction code to 1e-6 (`tests/test_scoring.py`).
+
+```bash
+curl -X POST https://credit-risk-api-fxk5.onrender.com/v1/score \
+     -H 'Content-Type: application/json' \
+     --data @examples/sample_request.json        # or http://localhost:8000 after `make serve`
+```
+
+```json
+{
+  "request_id": "3f2b6c1e-…",
+  "loan_id": "example-1",
+  "model_version": "pd_survival_v1",
+  "calibrated": true,
+  "pd_12m": 0.0553,
+  "pd_lifetime": 0.1736,
+  "prepay_lifetime": 0.5171,
+  "cif_default": [0.0043, 0.0167, 0.0341, 0.0553, 0.0755, 0.0939, 0.1124, 0.1298, 0.1449, 0.1574, 0.1677, 0.1736],
+  "cif_default_months": [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36],
+  "ecl_12m": 453.92,
+  "ecl_lifetime": 922.50,
+  "lgd": 0.8781,
+  "reason_codes": [
+    {"feature": "dti", "label": "High debt-to-income ratio", "shap_log_odds": 0.0717},
+    {"feature": "emp_x_homeowner", "label": "Not a homeowner, or short employment history", "shap_log_odds": 0.0593},
+    {"feature": "annual_income", "label": "Low annual income", "shap_log_odds": 0.0248},
+    {"feature": "fico", "label": "Low FICO score", "shap_log_odds": 0.0167}
+  ],
+  "warnings": []
+}
+```
+
+Endpoints: `POST /v1/score`, `POST /v1/score/batch` (up to 1,000), `POST /v1/outcomes`, `GET /v1/monitoring`, `GET /v1/model` (model card), `GET /v1/schema` (input fields and allowed values), `GET /health`; a landing page with a scoring form at `/` and interactive docs at `/docs`.
+
+### Monitoring
+
+- **Input drift:** PSI of each input in the logged requests vs the training distributions stored in the bundle (watch > 0.10, alert > 0.25).
+- **Score drift:** distribution of `pd_12m` by month.
+- **Calibration:** for loans with a 12-month outcome, mean predicted `pd_12m` vs the observed 12-month default rate, by issue month and pooled. Alert when the pooled ratio leaves 0.85–1.15, once at least 1,000 loans have outcomes. Loans more than 30 days past due are reported as defaults, following Phase 2's arrears finding.
+
+`make monitor-report` writes `reports/monitoring/report.html` (figures embedded) and `summary.json`.
+
+### Replay: would the monitor have caught the under-prediction?
+
+`make replay` sends 50,000 sampled test loans (issued 2015-01 to 2018-12) through the API in issue-month order, starting from an empty database. Each loan's 12-month outcome is posted 12 months after issue, and the monitor runs after every month. Results from `reports/monitoring/replay_summary.json` (49,675 loans scored; 25 rejected by validation because of categories the model never saw):
+
+| | Raw model | Calibrated model (default) |
+|---|---|---|
+| Calibration alert first fires | **2016-04**, after **4 months** of outcomes (3,342 loans), ratio 0.765 | **2016-08**, after **8 months** of outcomes (7,348 loans), ratio 0.842 |
+| Months in alert | 33 of 35 | 12 of 35 (2016-08 to 2017-12) |
+| Final pooled predicted / observed (36,389 loans) | 0.754 | 0.864 |
+| Single-request latency p50 / p95 | 20.6 ms / 23.3 ms | 20.2 ms / 22.5 ms |
+
+The raw model's ratio settles at 0.754 (2015: 0.749, 2016: 0.728, 2017: 0.785), reproducing Phase 2's finding, and the monitor flags it as soon as four months of 12-month outcomes exist. The calibrated model is closer but still under-predicts; it sits just inside the band by the end.
+
+Input drift is visible long before any outcome: `int_rate` crosses the alert line (PSI 0.255) in the November 2015 window, `revol_util` in November 2017 and `grade` in November 2018. Over the whole period the most-drifted inputs are `purpose` (0.125), `int_rate` (0.113) and `revol_util` (0.109). Monthly windows hold about 1,000 loans, so monthly PSI is noisier than the full-period figure.
+
+![Replay calibration](figures/replay_calibration.png)
+![Replay drift](figures/replay_drift.png)
+
+### Run it
+
+```bash
+make export-model      # rebuild models/pd_survival_v1/ from the Phase 2 artifacts (the bundle is committed)
+make serve             # http://localhost:8000/docs, logs to sqlite:///predictions.db
+cp .env.example .env   # set POSTGRES_PASSWORD
+docker compose up --build   # API + Postgres on http://localhost:8000
+make replay            # replay simulation (needs data/archive/)
+make monitor-report    # report from whatever is in DATABASE_URL
+```
+
+CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the Docker image on every push; no data or secrets are needed. For public hosting, `RATE_LIMIT_PER_MINUTE` limits requests per client IP and `MAX_BATCH` caps batch size.
+
+### Limitations
+
+- **Monitoring was validated on replayed history, not live traffic.** Real outcomes would arrive irregularly and be reported with their own delays.
+- **SHAP reason codes are explanations of the model, not regulatory adverse-action notices.** They describe which inputs moved this score, not the lender's reasons for a decision.
+- **Recalibration offsets are static.** Nothing retrains or re-fits the offsets when the alert fires.
+- **The rate limiter is in memory and per process.** Several instances behind a load balancer would each count separately.
+
+### Future work
+
+- Scheduled recalibration: re-fit the level offsets on recent outcomes when the calibration alert fires, with a human approval step.
+- Champion/challenger: score with LR and LightGBM side by side and compare them on live outcomes with a paired statistical test.
+- An LLM-written plain-English monitoring summary on top of `summary.json`.
+
+## 10. Reproduce
 
 ```bash
 make install
