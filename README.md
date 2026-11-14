@@ -2,6 +2,8 @@
 
 Credit risk models for Lending Club loans, validated out of time, with logistic regression as the benchmark and LightGBM as the main model.
 
+**Try it live:** [credit-risk-api-fxk5.onrender.com](https://credit-risk-api-fxk5.onrender.com) scores a loan application and draws its default curve ([see an example](https://credit-risk-api-fxk5.onrender.com/#example) · [API docs](https://credit-risk-api-fxk5.onrender.com/docs)). Free hosting: the first visit after a quiet spell takes about a minute to wake up.
+
 - **Phase 1:** probability of default for matured 36-month loans (2007–2016 originations). Numbers below come from `reports/artifacts/metrics.json`, written by `make train`.
 - **Phase 2:** [time-to-default](#phase-2-time-to-default) competing-risks hazard model on all 2.26M loans, with lifetime expected loss. Numbers come from `reports/artifacts/survival/`, written by `make train-survival`.
 - **Phase 3:** [serving and monitoring](#phase-3-serving-and-monitoring): a FastAPI scoring service with prediction logging, drift and calibration monitoring, a replay of 2015–2018, Docker and CI.
@@ -10,6 +12,7 @@ Credit risk models for Lending Club loans, validated out of time, with logistic 
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.5-orange.svg)
 ![LightGBM](https://img.shields.io/badge/LightGBM-4.6-green.svg)
 [![CI](https://github.com/jessi-sidhu/credit-risk-modeling/actions/workflows/ci.yml/badge.svg)](https://github.com/jessi-sidhu/credit-risk-modeling/actions/workflows/ci.yml)
+[![Live demo](https://img.shields.io/badge/live%20demo-Render-46e3b7.svg)](https://credit-risk-api-fxk5.onrender.com)
 
 ## Results
 
